@@ -11,7 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest"
-}
+
   },
   "dependencies": {
     "test": "^3.3.0",
