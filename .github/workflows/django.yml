@@ -2,9 +2,9 @@ name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main","SCRUM-7-%C3%89laboration-du-script-de-cr%C3%A9ation-de-la-base-de-donn%C3%A9es-" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main","SCRUM-7-%C3%89laboration-du-script-de-cr%C3%A9ation-de-la-base-de-donn%C3%A9es-" ]
 
 jobs:
   build:
