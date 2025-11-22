@@ -1,0 +1,15 @@
+# Fichiers Python compilés
+*.pyc
+__pycache__/
+
+# Environnement virtuel
+env/
+projetmma/
+
+# Fichiers secrets
+*.env
+settings_local.py
+
+# Django
+media/
+staticfiles/

@@ -74,10 +74,15 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'multistore',          # juste le nom de la base, pas un chemin
+        'USER': 'root',
+        'PASSWORD': 'amar123@',
+        'HOST': 'localhost',
+        'PORT': '3306',                # ajoute le port par sécurité
     }
 }
+
 
 
 # Password validation
