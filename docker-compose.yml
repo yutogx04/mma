@@ -1,0 +1,76 @@
+# Docker Compose - Multi-Server Deployment (Constraint 2.7)
+# Architecture: front, auth, api, worker, broker, discovery, proxy
+
+version: '3.8'
+
+services:
+  # Reverse Proxy / Load Balancer (Constraint 2.6)
+  traefik:
+    image: traefik:v2.10
+    ports:
+      - "80:80"
+      - "8080:8080" # Dashboard
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    depends_on:
+      - consul
+    networks:
+      - mma-network
+
+  # Service Registry/Discovery (Constraint 2.5)
+  consul:
+    image: consul:1.15
+    ports:
+      - "8500:8500"
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    networks:
+      - mma-network
+
+  # Message Broker (Constraint 2.4)
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - mma-network
+
+  # Django Backend - REST API + Auth (Constraints 2.1, 2.2)
+  django:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+    depends_on:
+      - rabbitmq
+      - consul
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.django.rule=PathPrefix(`/`)"
+    networks:
+      - mma-network
+
+  # Payment Worker - RabbitMQ Consumer
+  payment-worker:
+    build: ./backend
+    command: python manage.py start_consumer
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+      - django
+    networks:
+      - mma-network
+
+networks:
+  mma-network:
+    driver: bridge

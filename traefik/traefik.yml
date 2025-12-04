@@ -1,0 +1,24 @@
+# Traefik Static Configuration
+# Reverse proxy / Load Balancer (Constraint 2.6)
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+  consulCatalog:
+    endpoint:
+      address: "consul:8500"
+    exposedByDefault: false
+
+log:
+  level: INFO

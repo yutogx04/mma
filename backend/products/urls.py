@@ -1,18 +1,21 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ProductModelViewSet, CategoryModelViewSet, product_list, product_detail, create_product_view, update_product_view, delete_product_view, vendor_products_view, add_to_cart_view
+
+router = DefaultRouter()
+router.register(r'product', ProductModelViewSet)
+router.register(r'category', CategoryModelViewSet)
 
 urlpatterns = [
-    # Template Views
-    path('', views.product_list, name='product_list'),
-    path('<int:product_id>/', views.product_detail, name='product_detail'),
-    path('create/', views.create_product_view, name='product_create'),
-    path('<int:product_id>/update/', views.update_product_view, name='product_update'),
-    path('<int:product_id>/delete/', views.delete_product_view, name='product_delete'),
+    # API routes (Course 2 - Microservices pattern)
+    path('api/', include(router.urls)),
     
-    # API Views
-    path('api/', views.product_list_api, name='product_list_api'),
-    path('api/<int:product_id>/', views.product_detail_api, name='product_detail_api'),
-    path('api/create/', views.product_create_api, name='product_create_api'),
-    path('api/<int:product_id>/update/', views.product_update_api, name='product_update_api'),
-    path('api/<int:product_id>/delete/', views.product_delete_api, name='product_delete_api'),
+    # Template routes (Course 2 - Form handling pattern)
+    path('', product_list, name='product_list'),
+    path('create/', create_product_view, name='create_product'),
+    path('<int:product_id>/', product_detail, name='product_detail'),
+    path('<int:product_id>/update/', update_product_view, name='update_product'),
+    path('<int:product_id>/delete/', delete_product_view, name='delete_product'),
+    path('vendor/', vendor_products_view, name='vendor_products'),
+    path('add-to-cart/', add_to_cart_view, name='add_to_cart'),
 ]

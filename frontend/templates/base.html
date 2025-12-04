@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="E-Commerce Platform - Plateforme de commerce électronique moderne">
+    <title>{% block title %}E-Commerce Platform{% endblock %}</title>
+
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/product-cards.css">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Navigation</div>
+                <ul class="sidebar-nav">
+                    <li>
+                        <a href="{% url 'dashboard' %}"
+                            class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                            <span class="nav-icon">🏠</span>
+                            <span>Tableau de bord</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'product_list' %}"
+                            class="{% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+                            <span class="nav-icon">📦</span>
+                            <span>Produits</span>
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li>
+                        <a href="{% url 'order_list' %}"
+                            class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">
+                            <span class="nav-icon">📋</span>
+                            <span>Mes Commandes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'cart_view' %}"
+                            class="{% if 'cart' in request.resolver_match.url_name %}active{% endif %}">
+                            <span class="nav-icon">🛒</span>
+                            <span>Panier</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            {% if user.is_authenticated and user.role == 'vendor' or user.role == 'admin' %}
+            <div class="sidebar-section">
+                <div class="sidebar-title">Vendeur</div>
+                <ul class="sidebar-nav">
+                    {% if perms.products.add_product or user.role == 'vendor' or user.role == 'admin' %}
+                    <li>
+                        <a href="{% url 'create_product' %}">
+                            <span class="nav-icon">➕</span>
+                            <span>Nouveau Produit</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user.role == 'vendor' %}
+                    <li>
+                        <a href="{% url 'vendor_products' %}">
+                            <span class="nav-icon">📊</span>
+                            <span>Mes Produits</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if user.is_authenticated and user.role == 'admin' %}
+            <div class="sidebar-section">
+                <div class="sidebar-title">Administration</div>
+                <ul class="sidebar-nav">
+                    <li>
+                        <a href="/admin/">
+                            <span class="nav-icon">⚙️</span>
+                            <span>Panel Admin</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/users/user/">
+                            <span class="nav-icon">👥</span>
+                            <span>Utilisateurs</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </aside>
+
+        <!-- Sidebar Overlay for Mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper" id="mainWrapper">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                        ☰
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="logo">
+                        <span class="logo-icon">🛍️</span>
+                        <span>E-Commerce</span>
+                    </a>
+                </div>
+
+                <div class="header-right">
+                    <!-- Desktop Nav Links -->
+                    <nav class="header-nav">
+                        <a href="{% url 'product_list' %}">Produits</a>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'order_list' %}">Commandes</a>
+                        <a href="{% url 'cart_view' %}">Panier</a>
+                        {% endif %}
+                    </nav>
+
+                    <!-- Theme Toggle -->
+                    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                        <span class="icon-moon">🌙</span>
+                        <span class="icon-sun">☀️</span>
+                    </button>
+
+                    {% if user.is_authenticated %}
+                    <div class="user-badge">
+                        <span>👋</span>
+                        <strong>{{ user.username }}</strong>
+                        <span>({{ user.get_role_display }})</span>
+                    </div>
+                    <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary btn-sm">
+                            🚪 Déconnexion
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-secondary btn-sm">Connexion</a>
+                    <a href="{% url 'register' %}" class="btn btn-primary btn-sm">Inscription</a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Messages -->
+            <div class="messages" style="max-width: 1400px; margin: 0 auto; padding: 0 var(--spacing-xl, 2rem);">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="margin-top: 1rem;">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if error %}
+                <div class="alert alert-error" style="margin-top: 1rem;">
+                    ❌ {{ error }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                {% block content %}
+                <!-- Content will be injected here -->
+                {% endblock %}
+            </main>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <div class="footer-content">
+                    <div class="footer-grid">
+                        <!-- Brand Column -->
+                        <div class="footer-brand">
+                            <div class="footer-logo">
+                                <span>🛍️</span>
+                                <span>E-Commerce</span>
+                            </div>
+                            <p class="footer-description">
+                                Votre marketplace de confiance pour des achats en ligne sécurisés.
+                                Découvrez des milliers de produits de qualité, livrés rapidement chez vous.
+                            </p>
+                        </div>
+
+                        <!-- Role-based Links -->
+                        {% if user.is_authenticated and user.role == 'vendor' %}
+                        <!-- Vendor Links -->
+                        <div class="footer-section">
+                            <h4>Espace Vendeur</h4>
+                            <ul class="footer-links">
+                                <li><a href="{% url 'vendor_products' %}">Mes Produits</a></li>
+                                <li><a href="{% url 'create_product' %}">Ajouter un Produit</a></li>
+                                <li><a href="{% url 'create_shop' %}">Gérer ma Boutique</a></li>
+                                <li><a href="{% url 'order_list' %}">Mes Ventes</a></li>
+                            </ul>
+                        </div>
+                        {% elif user.is_authenticated and user.role == 'admin' %}
+                        <!-- Admin Links -->
+                        <div class="footer-section">
+                            <h4>Administration</h4>
+                            <ul class="footer-links">
+                                <li><a href="/admin/">Panel Admin</a></li>
+                                <li><a href="/admin/users/user/">Utilisateurs</a></li>
+                                <li><a href="{% url 'product_list' %}">Tous les Produits</a></li>
+                                <li><a href="{% url 'order_list' %}">Toutes les Commandes</a></li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <!-- Customer Links (default) -->
+                        <div class="footer-section">
+                            <h4>Espace Client</h4>
+                            <ul class="footer-links">
+                                <li><a href="{% url 'product_list' %}">Tous les Produits</a></li>
+                                {% if user.is_authenticated %}
+                                <li><a href="{% url 'order_list' %}">Mes Commandes</a></li>
+                                <li><a href="{% url 'cart_view' %}">Mon Panier</a></li>
+                                {% else %}
+                                <li><a href="{% url 'login' %}">Connexion</a></li>
+                                <li><a href="{% url 'register' %}">Créer un compte</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        <!-- Help & Support -->
+                        <div class="footer-section">
+                            <h4>Aide & Support</h4>
+                            <ul class="footer-links">
+                                <li><a href="#">Centre d'aide</a></li>
+                                <li><a href="#">Suivi de commande</a></li>
+                                <li><a href="#">Retours & Remboursements</a></li>
+                                <li><a href="#">Nous contacter</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- About Links -->
+                        <div class="footer-section">
+                            <h4>À Propos</h4>
+                            <ul class="footer-links">
+                                <li><a href="#">Qui sommes-nous?</a></li>
+                                <li><a href="#">Conditions d'utilisation</a></li>
+                                <li><a href="#">Politique de confidentialité</a></li>
+                                <li><a href="#">Nos engagements</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="footer-bottom">
+                        <p class="footer-copyright">
+                            © 2025 E-Commerce Platform - Tous droits réservés
+                        </p>
+                        <div class="footer-social">
+                            <a href="#" aria-label="Facebook">📘</a>
+                            <a href="#" aria-label="Twitter">🐦</a>
+                            <a href="#" aria-label="LinkedIn">💼</a>
+                            <a href="#" aria-label="Instagram">📷</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ==========================================
+            // DARK MODE TOGGLE
+            // ==========================================
+            const themeToggle = document.getElementById('themeToggle');
+            const body = document.body;
+
+            // Check for saved preference or system preference
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                body.classList.add('dark-mode');
+            }
+
+            themeToggle.addEventListener('click', function () {
+                body.classList.toggle('dark-mode');
+                const isDark = body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+
+            // ==========================================
+            // SIDEBAR TOGGLE (Mobile)
+            // ==========================================
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const mainWrapper = document.getElementById('mainWrapper');
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('active');
+                sidebarOverlay.classList.toggle('active');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+
+            menuToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+
+            // ==========================================
+            // AUTO-HIDE MESSAGES
+            // ==========================================
+            setTimeout(() => {
+                const messages = document.querySelectorAll('.alert');
+                messages.forEach(message => {
+                    message.style.transition = 'opacity 0.5s, transform 0.5s';
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateY(-10px)';
+                    setTimeout(() => message.remove(), 500);
+                });
+            }, 5000);
+
+            // ==========================================
+            // CONFIRM DESTRUCTIVE ACTIONS
+            // ==========================================
+            document.querySelectorAll('form[data-confirm]').forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    const message = this.getAttribute('data-confirm');
+                    if (message && !confirm(message)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

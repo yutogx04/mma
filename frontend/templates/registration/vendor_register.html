@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription Vendeur - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 600px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">🏪 Devenir Vendeur</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label for="id_username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom d'utilisateur:</label>
+                <input type="text" name="username" id="id_username" required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+            </div>
+            
+            <div>
+                <label for="id_email" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Email:</label>
+                <input type="email" name="email" id="id_email" required 
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Mot de passe:</label>
+            <input type="password" name="password" id="id_password" required 
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <label for="id_shop_name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom du magasin:</label>
+            <input type="text" name="shop_name" id="id_shop_name" required 
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <label for="id_shop_description" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Description du magasin:</label>
+            <textarea name="shop_description" id="id_shop_description" required 
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; height: 100px; resize: vertical;"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-warning" style="width: 100%; padding: 0.75rem; font-size: 1.1rem;">
+            🏪 Devenir Vendeur
+        </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+        <p style="color: #666;">
+            <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none;">← Retour à l'inscription standard</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

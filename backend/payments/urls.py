@@ -2,10 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # Template Views
-    path('<int:order_id>/create/', views.payment_create_view, name='payment_create'),
+    # Template View (for payment form)
+    path('frontend/<int:order_id>/create/', views.payment_create_view, name='payment_create'),
     
-    # API Views
-    path('api/create/', views.payment_create_api, name='payment_create_api'),
-    path('api/<int:payment_id>/', views.payment_detail_api, name='payment_detail_api'),
+    # API Views (mounted under /api/payments/)
+    path('create/', views.payment_create_api, name='payment_create_api'),
+    path('<int:payment_id>/', views.payment_detail_api, name='payment_detail_api'),
 ]

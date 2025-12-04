@@ -1,41 +1,37 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-import requests
 from .models import Review
 from products.models import Product
 
 @login_required
 def review_create_view(request, product_id):
+    """Create a review for a product"""
+    product = get_object_or_404(Product, id=product_id)
+    
     if request.method == "POST":
         rating = request.POST.get("rating")
         comment = request.POST.get("comment")
         
-        token = request.session.get('access_token')
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        # Check if user already reviewed this product
+        if Review.objects.filter(user=request.user, product=product).exists():
+            messages.error(request, "Vous avez déjà évalué ce produit")
+            return redirect('product_detail', product_id=product_id)
         
-        response = requests.post(
-            "http://127.0.0.1:8000/api/reviews/create/",
-            data={
-                "product_id": product_id,
-                "rating": rating,
-                "comment": comment
-            },
-            headers=headers
+        # Create review
+        Review.objects.create(
+            user=request.user,
+            product=product,
+            rating=rating,
+            comment=comment
         )
         
-        if response.status_code == 201:
-            return redirect('product_detail', product_id=product_id)
-        else:
-            product = get_object_or_404(Product, id=product_id)
-            return render(request, "reviews/create.html", {
-                'product': product,
-                'error': 'Failed to create review'
-            })
+        messages.success(request, "Avis publié avec succès!")
+        return redirect('product_detail', product_id=product_id)
     
-    product = get_object_or_404(Product, id=product_id)
     return render(request, "reviews/create.html", {
         'product': product
     })
@@ -44,6 +40,7 @@ def review_create_view(request, product_id):
 @api_view(['POST'])
 @login_required
 def review_create_api(request):
+    """API endpoint to create a review"""
     product_id = request.data.get('product_id')
     rating = request.data.get('rating')
     comment = request.data.get('comment')
@@ -71,6 +68,7 @@ def review_create_api(request):
 @api_view(['DELETE'])
 @login_required
 def review_delete_api(request, review_id):
+    """API endpoint to delete a review"""
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
     
@@ -81,6 +79,7 @@ def review_delete_api(request, review_id):
 
 @api_view(['GET'])
 def product_reviews_api(request, product_id):
+    """API endpoint to get reviews for a product"""
     product = get_object_or_404(Product, id=product_id)
     reviews = Review.objects.filter(product=product)
     

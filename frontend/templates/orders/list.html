@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Commandes - E-Commerce{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-delivered {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-shipped {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-paid {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-cancelled {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-pending {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .status-cart {
+        background: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    body.dark-mode .status-delivered {
+        background: #064e3b;
+        color: #a7f3d0;
+    }
+
+    body.dark-mode .status-shipped {
+        background: #1e3a8a;
+        color: #bfdbfe;
+    }
+
+    body.dark-mode .status-paid {
+        background: #78350f;
+        color: #fde68a;
+    }
+
+    body.dark-mode .status-cancelled {
+        background: #7f1d1d;
+        color: #fecaca;
+    }
+
+    body.dark-mode .status-pending {
+        background: #374151;
+        color: #e5e7eb;
+    }
+
+    body.dark-mode .status-cart {
+        background: #581c87;
+        color: #e9d5ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orders-page animate-slide-up">
+    <!-- Page Header -->
+    <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
+        <h1 class="page-title">
+            {% if user.role == 'vendor' %}
+            📊 Commandes de mes Produits
+            {% else %}
+            📋 Mes Commandes
+            {% endif %}
+        </h1>
+        <p class="text-muted">Suivez l'état de vos commandes</p>
+    </div>
+
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <!-- Order Header -->
+                <div class="flex justify-between items-center mb-3" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin-bottom: 0.5rem;">Commande #{{ order.id }}</h3>
+                        <p class="text-muted" style="margin-bottom: 0.25rem;">
+                            <strong>Date:</strong> {{ order.created_at|date:"d/m/Y H:i" }}
+                        </p>
+                        {% if user.role == 'vendor' %}
+                        <p class="text-muted">
+                            <strong>Client:</strong> {{ order.user.username }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div style="text-align: right;">
+                        <span class="badge status-{{ order.status }}"
+                            style="padding: 0.5rem 1rem; font-size: 0.875rem; margin-bottom: 0.5rem; display: inline-block;">
+                            {{ order.status|title }}
+                        </span>
+                        <div class="text-success" style="font-size: 1.5rem; font-weight: bold;">
+                            ${{ order.total_amount }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="mb-3">
+                    <h4 class="text-muted mb-2">📦 Articles commandés:</h4>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Produit</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th style="text-align: right;">Sous-total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td><strong>{{ item.product_name }}</strong></td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>${{ item.price }}</td>
+                                    <td style="text-align: right;">${{ item.subtotal }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr style="font-weight: bold; background: var(--bg-tertiary);">
+                                    <td colspan="3">Total</td>
+                                    <td style="text-align: right;">${{ order.total_amount }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2" style="flex-wrap: wrap;">
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-primary">
+                        👀 Voir Détails
+                    </a>
+
+                    {% if user.role == 'customer' %}
+                    {% if order.status == 'cart' or order.status == 'pending' %}
+                    <form method="post" action="{% url 'order_detail' order.id %}"
+                        data-confirm="Annuler cette commande?">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel_order">
+                        <button type="submit" class="btn btn-danger">
+                            ❌ Annuler
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if order.status == 'pending' %}
+                    <a href="{% url 'payment_create' order.id %}" class="btn btn-success">
+                        💳 Payer
+                    </a>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if user.role == 'vendor' %}
+                    {% if order.status == 'paid' %}
+                    <form method="post" action="{% url 'order_detail' order.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="status" value="shipped">
+                        <button type="submit" class="btn btn-warning">
+                            🚚 Marquer comme Expédié
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if order.status == 'shipped' %}
+                    <form method="post" action="{% url 'order_detail' order.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="status" value="delivered">
+                        <button type="submit" class="btn btn-success">
+                            ✅ Marquer comme Livré
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+
+                    {% if user.role == 'admin' %}
+                    <form method="post" action="{% url 'order_detail' order.id %}"
+                        data-confirm="Supprimer cette commande?">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="cancel_order">
+                        <button type="submit" class="btn btn-danger">
+                            🗑️ Supprimer
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state-icon">😔</div>
+            <h3>Aucune commande trouvée</h3>
+            <p>
+                {% if user.role == 'customer' %}
+                Commencez par ajouter des produits à votre panier!
+                {% else %}
+                Aucune commande pour vos produits pour le moment.
+                {% endif %}
+            </p>
+            <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">
+                🛍️ Parcourir les Produits
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

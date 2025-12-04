@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="product-detail animate-slide-up" style="max-width: 1000px; margin: 0 auto;">
+    <!-- Breadcrumb -->
+    <div class="mb-3">
+        <a href="{% url 'product_list' %}" class="text-primary">📦 Produits</a>
+        <span class="text-muted" style="margin: 0 0.5rem;">/</span>
+        <span>{{ product.name }}</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 2rem;">
+        <!-- Product Image -->
+        <div class="product-card-image" style="height: 400px; border-radius: var(--radius-lg); font-size: 6rem;">
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                style="max-width: 100%; max-height: 100%; border-radius: var(--radius-md);">
+            {% else %}
+            📦
+            {% endif %}
+        </div>
+
+        <!-- Product Info -->
+        <div class="product-info">
+            <h1 style="font-size: 2rem; margin-bottom: 1rem;">{{ product.name }}</h1>
+
+            <div class="text-success" style="font-size: 2rem; font-weight: bold; margin-bottom: 1.5rem;">
+                ${{ product.price }}
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <p class="text-secondary" style="line-height: 1.7; margin: 0;">{{ product.description }}</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="stat-card">
+                    <div class="stat-icon">🏪</div>
+                    <div class="stat-value" style="font-size: 1rem;">{{ product.shop.name }}</div>
+                    <div class="stat-label">Magasin</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">📁</div>
+                    <div class="stat-value" style="font-size: 1rem;">{{ product.category.name }}</div>
+                    <div class="stat-label">Catégorie</div>
+                </div>
+            </div>
+
+            <!-- Stock Information -->
+            <div class="mb-3">
+                {% if product.stock_quantity > 10 %}
+                <span class="badge badge-success" style="padding: 0.5rem 1rem;">
+                    ✅ En stock ({{ product.stock_quantity }} disponibles)
+                </span>
+                {% elif product.stock_quantity > 0 %}
+                <span class="badge badge-warning" style="padding: 0.5rem 1rem;">
+                    ⚠️ Stock faible ({{ product.stock_quantity }} restants)
+                </span>
+                {% else %}
+                <span class="badge badge-danger" style="padding: 0.5rem 1rem;">
+                    ❌ Rupture de stock
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                {% if user.is_authenticated and user.role == 'customer' and product.stock_quantity > 0 %}
+                <form method="post" action="{% url 'add_to_cart' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="flex gap-2">
+                        <div style="width: 100px;">
+                            <label class="form-label">Quantité</label>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}"
+                                class="form-control">
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-success btn-lg w-full">
+                                🛒 Ajouter au Panier
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% elif user.is_authenticated and user.role == 'customer' %}
+                <button class="btn btn-secondary btn-lg w-full" disabled>
+                    ❌ Indisponible
+                </button>
+                {% elif not user.is_authenticated %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;">🔒</div>
+                        <p class="text-muted mb-3">Connectez-vous pour ajouter ce produit à votre panier</p>
+                        <a href="{% url 'login' %}?next={{ request.get_full_path }}" class="btn btn-primary">
+                            🔐 Se connecter
+                        </a>
+                        <a href="{% url 'register' %}" class="btn btn-secondary">
+                            📝 S'inscrire
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user.is_authenticated and user.role in 'vendor,admin' and product.shop.user == user %}
+                <div class="flex gap-2 mt-3">
+                    <a href="{% url 'update_product' product.id %}" class="btn btn-warning" style="flex: 1;">
+                        ✏️ Modifier
+                    </a>
+                    <form method="post" action="{% url 'delete_product' product.id %}"
+                        data-confirm="Supprimer définitivement '{{ product.name }}'?" style="flex: 1;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-full">
+                            🗑️ Supprimer
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Information -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h3 style="margin: 0;">📋 Informations Supplémentaires</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+                <div>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">📅 Date de création</h4>
+                    <p style="font-weight: 600; margin: 0;">{{ product.created_at|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">🔄 Dernière modification
+                    </h4>
+                    <p style="font-weight: 600; margin: 0;">{{ product.updated_at|date:"d/m/Y H:i" }}</p>
+                </div>
+                <div>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">🏪 Vendeur</h4>
+                    <p style="font-weight: 600; margin: 0;">{{ product.shop.user.username }}</p>
+                </div>
+                <div>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">📧 Contact</h4>
+                    <p style="font-weight: 600; margin: 0;">{{ product.shop.user.email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">⭐ Avis des Clients</h3>
+        </div>
+        <div class="card-body">
+            <!-- Add Review Form -->
+            {% if user.is_authenticated and user.role == 'customer' %}
+            <div class="card mb-3" style="background: var(--bg-secondary);">
+                <div class="card-body">
+                    <h4 class="mb-2">📝 Donner votre avis</h4>
+                    <form method="post" action="{% url 'review_create' product.id %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label">Note</label>
+                            <select name="rating" required class="form-control">
+                                <option value="5">★★★★★ - Excellent</option>
+                                <option value="4">★★★★☆ - Très bon</option>
+                                <option value="3">★★★☆☆ - Bon</option>
+                                <option value="2">★★☆☆☆ - Moyen</option>
+                                <option value="1">★☆☆☆☆ - Mauvais</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Commentaire</label>
+                            <textarea name="comment" required class="form-control" style="height: 100px;"
+                                placeholder="Partagez votre expérience..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            ✅ Publier l'avis
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Reviews List -->
+            {% if product.review_set.all %}
+            {% for review in product.review_set.all %}
+            <div class="card mb-2" style="background: var(--bg-secondary);">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <strong>{{ review.user.username }}</strong>
+                            <div class="text-muted" style="font-size: 0.875rem;">
+                                {{ review.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                        <div style="font-size: 1.25rem; color: #f59e0b;">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= review.rating %}★{% else %}☆{% endif %} {% endfor %} </div>
+                        </div>
+                        <p style="margin: 0; line-height: 1.6;">{{ review.comment }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state" style="padding: 2rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
+                    <p class="text-muted">Aucun avis pour le moment. Soyez le premier à noter ce produit!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @media (max-width: 768px) {
+            .product-detail>div:first-of-type {
+                grid-template-columns: 1fr !important;
+            }
+        }
+    </style>
+    {% endblock %}

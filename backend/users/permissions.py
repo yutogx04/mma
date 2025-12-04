@@ -1,19 +1,21 @@
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from users.models import User
-from products.models import Product, Category
-from orders.models import Order, OrderItem
-from reviews.models import Review
-from payments.models import Payment
-from invoices.models import Invoice
+
+
 
 class RolePermissions:
-    """Manage role-based permissions following course patterns"""
     
     @classmethod
     def setup_roles_and_permissions(cls):
-        """Create all roles and assign permissions"""
+        # Import inside method to avoid circular import
+        from users.models import User  
+        from products.models import Product, Category
+        from orders.models import Order, OrderItem
+        from reviews.models import Review
+        from payments.models import Payment
+        from invoices.models import Invoice
+        
         with transaction.atomic():
             cls._create_customer_role()
             cls._create_vendor_role()
@@ -22,6 +24,13 @@ class RolePermissions:
     @classmethod
     def _create_customer_role(cls):
         """Create Customer role with specific permissions"""
+        # Import inside method
+        from products.models import Product, Category
+        from orders.models import Order
+        from reviews.models import Review
+        from payments.models import Payment
+        from invoices.models import Invoice
+        
         customer_group, created = Group.objects.get_or_create(name='Customers')
         
         # Permissions for customers
@@ -33,14 +42,14 @@ class RolePermissions:
             # Order permissions
             ('view_order', Order),
             ('add_order', Order),
-            ('change_order', Order),  # For cart updates
-            ('delete_order', Order),  # For cancelling orders
+            ('change_order', Order), 
+            ('delete_order', Order),  
             
             # Review permissions
             ('view_review', Review),
             ('add_review', Review),
-            ('change_review', Review),  # Edit own reviews
-            ('delete_review', Review),  # Delete own reviews
+            ('change_review', Review),  
+            ('delete_review', Review),  
             
             # Payment permissions
             ('view_payment', Payment),
@@ -55,7 +64,10 @@ class RolePermissions:
     
     @classmethod
     def _create_vendor_role(cls):
-        """Create Vendor role with specific permissions"""
+        from products.models import Product, Category
+        from orders.models import Order
+        from reviews.models import Review
+        
         vendor_group, created = Group.objects.get_or_create(name='Vendors')
         
         # Permissions for vendors
@@ -74,8 +86,8 @@ class RolePermissions:
             ('change_order', Order),  # For updating order status
             
             # Shop permissions (manage their own shop)
-            ('view_shop', 'users.Shop'),
-            ('change_shop', 'users.Shop'),
+            ('view_shop', 'shop.Shop'),
+            ('change_shop', 'shop.Shop'),
             
             # Review permissions (view only)
             ('view_review', Review),
@@ -88,11 +100,8 @@ class RolePermissions:
     def _create_admin_role(cls):
         """Create Admin role with all permissions"""
         admin_group, created = Group.objects.get_or_create(name='Administrators')
-        
-        # Admins get all permissions
         all_permissions = Permission.objects.all()
         admin_group.permissions.set(all_permissions)
-        
         return admin_group
     
     @classmethod
@@ -152,11 +161,11 @@ class RolePermissions:
 
 # Custom permission checkers following course patterns
 def can_create_product(user):
-    """Check if user can create products (vendors only)"""
+    # Import inside function
+    from users.models import User
     return user.is_authenticated and user.role == 'vendor'
 
 def can_edit_product(user, product):
-    """Check if user can edit a specific product"""
     if not user.is_authenticated:
         return False
     if user.role == 'admin':
@@ -166,25 +175,38 @@ def can_edit_product(user, product):
     return False
 
 def can_delete_product(user, product):
-    """Check if user can delete a specific product"""
+    """
+    Check if user has permission to delete the product
+    Requires two arguments: user and product
+    """
+    # Check if user is authenticated
     if not user.is_authenticated:
         return False
+    
+    # Check if user has role attribute
+    if not hasattr(user, 'role'):
+        return False
+    
+    # Admin can delete any product
     if user.role == 'admin':
         return True
+    
+    # Vendor can only delete their own products
     if user.role == 'vendor':
-        # Vendors can only delete their own products without orders
-        return (product.shop.user == user and 
-                not product.orderitem_set.exists())
+        # Make sure product has a shop and the shop has a user
+        if hasattr(product, 'shop') and product.shop and hasattr(product.shop, 'user'):
+            return product.shop.user == user
+        return False
+    
+    # Other roles cannot delete products
     return False
 
 def can_view_order(user, order):
-    """Check if user can view a specific order"""
     if not user.is_authenticated:
         return False
     if user.role == 'admin':
         return True
     if user.role == 'vendor':
-        # Vendors can see orders containing their products
         return order.orderitem_set.filter(
             product__shop__user=user
         ).exists()
@@ -193,7 +215,6 @@ def can_view_order(user, order):
     return False
 
 def can_update_order_status(user, order):
-    """Check if user can update order status"""
     if not user.is_authenticated:
         return False
     if user.role == 'admin':
@@ -207,7 +228,6 @@ def can_update_order_status(user, order):
     return False
 
 def can_cancel_order(user, order):
-    """Check if user can cancel an order"""
     if not user.is_authenticated:
         return False
     if user.role == 'admin':
@@ -219,9 +239,12 @@ def can_cancel_order(user, order):
     return False
 
 def can_create_review(user, product):
-    """Check if user can create a review for a product"""
     if not user.is_authenticated or user.role != 'customer':
         return False
+    
+    # Import inside function
+    from orders.models import OrderItem
+    from reviews.models import Review
     
     # Check if user has purchased the product
     has_purchased = OrderItem.objects.filter(
@@ -239,7 +262,6 @@ def can_create_review(user, product):
     return has_purchased and not already_reviewed
 
 def can_delete_review(user, review):
-    """Check if user can delete a review"""
     if not user.is_authenticated:
         return False
     if user.role == 'admin':

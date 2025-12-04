@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="auth-container animate-slide-up" style="max-width: 500px;">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>📝 Créer un compte</h1>
+            <p>Rejoignez notre communauté</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="id_username" class="form-label">Nom d'utilisateur</label>
+                    <input type="text" name="username" id="id_username" required class="form-control"
+                        placeholder="Choisir un nom" value="{{ form.username.value|default:'' }}">
+                    {% if form.username.errors %}
+                    <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                        {% for error in form.username.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_email" class="form-label">Email</label>
+                    <input type="email" name="email" id="id_email" required class="form-control"
+                        placeholder="votre@email.com" value="{{ form.email.value|default:'' }}">
+                    {% if form.email.errors %}
+                    <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                        {% for error in form.email.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="id_password1" class="form-label">Mot de passe</label>
+                    <input type="password" name="password1" id="id_password1" required class="form-control"
+                        placeholder="••••••••">
+                    {% if form.password1.errors %}
+                    <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                        {% for error in form.password1.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="id_password2" class="form-label">Confirmation</label>
+                    <input type="password" name="password2" id="id_password2" required class="form-control"
+                        placeholder="••••••••">
+                    {% if form.password2.errors %}
+                    <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                        {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_role" class="form-label">Type de compte</label>
+                <select name="role" id="id_role" required class="form-control">
+                    <option value="customer" {% if form.role.value=='customer' %}selected{% endif %}>👤 Client</option>
+                    <option value="vendor" {% if form.role.value=='vendor' %}selected{% endif %}>🏪 Vendeur</option>
+                </select>
+                {% if form.role.errors %}
+                <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                    {% for error in form.role.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg w-full">
+                ✅ Créer mon compte
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Déjà un compte? <a href="{% url 'login' %}" class="text-primary">Se connecter</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

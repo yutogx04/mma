@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="dashboard animate-slide-up">
+    {% if user.role == 'vendor' and needs_shop %}
+    <!-- Shop Creation Alert -->
+    <div class="alert alert-warning mb-3">
+        <span>🏪</span>
+        <div>
+            <strong>Créer votre Magasin</strong>
+            <p class="mb-2" style="margin-top: 0.5rem;">Vous devez créer un magasin avant de pouvoir ajouter des
+                produits.</p>
+            <a href="{% url 'create_shop' %}" class="btn btn-warning">
+                Créer mon Magasin
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Welcome Section -->
+    <div class="welcome-banner">
+        <h1>👋 Bienvenue, {{ user.username }}!</h1>
+        <p>
+            Rôle: <strong>{{ user.get_role_display }}</strong>
+            {% if user_shop %} | Magasin: <strong>{{ user_shop.name }}</strong>{% endif %}
+        </p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        {% if recent_orders %}
+        <div class="stat-card">
+            <div class="stat-icon" style="color: var(--primary);">📋</div>
+            <div class="stat-value">{{ recent_orders|length }}</div>
+            <div class="stat-label">Commandes récentes</div>
+        </div>
+        {% endif %}
+
+        {% if user_shop %}
+        <div class="stat-card">
+            <div class="stat-icon" style="color: var(--success);">📦</div>
+            <div class="stat-value">{{ total_products }}</div>
+            <div class="stat-label">Produits</div>
+        </div>
+        {% endif %}
+
+        <div class="stat-card">
+            <div class="stat-icon" style="color: var(--warning);">🛒</div>
+            <div class="stat-value">{% if cart_items %}{{ cart_items }}{% else %}0{% endif %}</div>
+            <div class="stat-label">Articles au panier</div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+        {% if user.role == 'customer' %}
+        <!-- Customer Dashboard -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">🛍️</div>
+            <h3>Acheter des Produits</h3>
+            <p>Parcourez notre catalogue et trouvez vos produits préférés</p>
+            <a href="{% url 'product_list' %}" class="btn btn-primary">
+                Explorer les Produits
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">📋</div>
+            <h3>Mes Commandes</h3>
+            <p>Suivez l'état de vos commandes et votre historique</p>
+            <a href="{% url 'order_list' %}" class="btn btn-success">
+                Voir mes Commandes
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">🛒</div>
+            <h3>Mon Panier</h3>
+            <p>Consultez et gérez les articles de votre panier</p>
+            <a href="{% url 'cart_view' %}" class="btn btn-outline">
+                Voir le Panier
+            </a>
+        </div>
+
+        {% elif user.role == 'vendor' %}
+        <!-- Vendor Dashboard -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">📦</div>
+            <h3>Mes Produits</h3>
+            <p>Gérez votre catalogue de produits</p>
+            <a href="{% url 'vendor_products' %}" class="btn btn-primary">
+                Voir mes Produits
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">➕</div>
+            <h3>Nouveau Produit</h3>
+            <p>Ajoutez un nouveau produit à votre boutique</p>
+            <a href="{% url 'create_product' %}" class="btn btn-success">
+                Créer un Produit
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">📊</div>
+            <h3>Commandes Clients</h3>
+            <p>Suivez les commandes de vos produits</p>
+            <a href="{% url 'order_list' %}" class="btn btn-outline">
+                Voir les Commandes
+            </a>
+        </div>
+
+        {% elif user.role == 'admin' %}
+        <!-- Admin Dashboard -->
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">⚙️</div>
+            <h3>Administration</h3>
+            <p>Accédez à l'interface d'administration complète</p>
+            <a href="/admin/" class="btn btn-primary">
+                Panel d'Admin
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">👥</div>
+            <h3>Gestion Utilisateurs</h3>
+            <p>Managez les utilisateurs et les permissions</p>
+            <a href="/admin/users/user/" class="btn btn-success">
+                Gérer les Utilisateurs
+            </a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="dashboard-card-icon">📦</div>
+            <h3>Tous les Produits</h3>
+            <p>Consultez et gérez tous les produits</p>
+            <a href="{% url 'product_list' %}" class="btn btn-outline">
+                Voir les Produits
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3 style="margin: 0;">📊 Activité Récente</h3>
+        </div>
+        <div class="card-body">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- Recent Orders -->
+                <div>
+                    <h4 class="text-muted mb-2">Dernières Commandes</h4>
+                    {% if recent_orders %}
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        {% for order in recent_orders %}
+                        <div class="card" style="padding: 1rem;">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <strong>#{{ order.id }}</strong>
+                                    <div class="text-muted" style="font-size: 0.875rem;">{{
+                                        order.created_at|date:"d/m/Y" }}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="text-success" style="font-weight: bold;">${{ order.total_amount }}</div>
+                                    <span class="badge badge-secondary">{{ order.get_status_display }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state" style="padding: 1.5rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+                        <p class="text-muted">Aucune commande récente</p>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'order_list' %}" class="btn btn-outline w-full mt-2">
+                        Voir toutes les commandes
+                    </a>
+                </div>
+
+                <!-- Popular Products -->
+                <div>
+                    <h4 class="text-muted mb-2">Produits Populaires</h4>
+                    {% if popular_products %}
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        {% for product in popular_products %}
+                        <div class="card" style="padding: 1rem;">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <strong>{{ product.name }}</strong>
+                                    <div class="text-muted" style="font-size: 0.875rem;">{{ product.shop.name }}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="text-success" style="font-weight: bold;">${{ product.price }}</div>
+                                    <span class="badge badge-secondary">
+                                        {% with product.orderitem_set.count as order_count %}
+                                        {{ order_count }} commande{{ order_count|pluralize:"s" }}
+                                        {% endwith %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state" style="padding: 1.5rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
+                        <p class="text-muted">Aucun produit populaire</p>
+                    </div>
+                    {% endif %}
+                    <a href="{% url 'product_list' %}" class="btn btn-outline w-full mt-2">
+                        Voir tous les produits
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

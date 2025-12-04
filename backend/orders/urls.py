@@ -1,17 +1,21 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import (
+    order_list, order_detail, cart_view, add_to_cart_view,
+    OrderViewSet
+)
+
+# API Router (Course pattern - ModelViewSet)
+router = DefaultRouter()
+router.register(r'order', OrderViewSet)
 
 urlpatterns = [
     # Template Views
-    path('', views.order_list, name='order_list'),
-    path('cart/', views.cart_view, name='cart_view'),
-    path('<int:order_id>/', views.order_detail, name='order_detail'),
+    path('', order_list, name='order_list'),
+    path('cart/', cart_view, name='cart_view'),
+    path('<int:order_id>/', order_detail, name='order_detail'),
+    path('add/', add_to_cart_view, name='add_to_cart'),
     
-    # API Views
-    path('api/', views.order_list_api, name='order_list_api'),
-    path('api/<int:order_id>/', views.order_detail_api, name='order_detail_api'),
-    path('api/create/', views.order_create_api, name='order_create_api'),
-    path('api/<int:order_id>/update/', views.order_update_api, name='order_update_api'),
-    path('api/<int:order_id>/delete/', views.order_delete_api, name='order_delete_api'),
-    path('api/<int:order_id>/checkout/', views.order_checkout_api, name='order_checkout_api'),
+    # API Routes (via Router)
+    path('api/', include(router.urls)),
 ]

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}Commande #{{ order.id }} - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="order-detail" style="max-width: 800px; margin: 0 auto;">
+    <div class="breadcrumb" style="margin-bottom: 2rem;">
+        <a href="{% url 'order_list' %}" style="color: #007bff; text-decoration: none;">📋 Mes Commandes</a>
+        <span style="margin: 0 0.5rem; color: #666;">/</span>
+        <span style="color: #333;">Commande #{{ order.id }}</span>
+    </div>
+
+    <div class="order-header-card"
+        style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <div
+            style="display: flex; justify-content: between; align-items: start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 2rem;">
+            <div style="flex: 1; min-width: 300px;">
+                <h1 style="color: #333; margin-bottom: 0.5rem;">Commande #{{ order.id }}</h1>
+                <p style="color: #666; margin-bottom: 0.5rem;">
+                    <strong>📅 Date:</strong> {{ order.created_at|date:"d/m/Y à H:i" }}
+                </p>
+                {% if user.role == 'vendor' %}
+                <p style="color: #666; margin-bottom: 0.5rem;">
+                    <strong>👤 Client:</strong> {{ order.user.username }}
+                </p>
+                {% endif %}
+
+                {% if user.role == 'customer' %}
+                {% if order.status == 'cart' or order.status == 'pending' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel_order">
+                    <button type="submit" class="btn btn-danger"
+                        data-confirm="Êtes-vous sûr de vouloir annuler cette commande?">
+                        ❌ Annuler la Commande
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+
+                {% if user.role == 'vendor' %}
+                {% if order.status == 'paid' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="status" value="shipped">
+                    <button type="submit" class="btn btn-warning">
+                        🚚 Marquer comme Expédié
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if order.status == 'shipped' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="status" value="delivered">
+                    <button type="submit" class="btn btn-success">
+                        ✅ Marquer comme Livré
+                    </button>
+                </form>
+                {% endif %}
+                {% endif %}
+
+                {% if user.role == 'admin' %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel_order">
+                    <button type="submit" class="btn btn-danger"
+                        data-confirm="Supprimer définitivement cette commande?">
+                        🗑️ Supprimer
+                    </button>
+                </form>
+                {% endif %}
+
+                <div style="margin-top: 1rem;">
+                    <a href="{% url 'order_list' %}" class="btn btn-secondary" style="text-decoration: none;">
+                        ← Retour aux Commandes
+                    </a>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="order-items-card" style="flex: 2; min-width: 300px;">
+                <h2 style="color: #333; margin-bottom: 1.5rem;">📦 Articles de la Commande</h2>
+
+                <div class="items-list">
+                    {% for item in order.orderitem_set.all %}
+                    <div class="item-card"
+                        style="display: flex; justify-content: between; align-items: center; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="flex: 2;">
+                            <h4 style="color: #333; margin-bottom: 0.5rem;">{{ item.product.name }}</h4>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                Référence: #{{ item.product.id }}
+                            </div>
+                        </div>
+
+                        <div style="flex: 1; text-align: center;">
+                            <div style="font-weight: bold; color: #333;">Quantité</div>
+                            <div style="font-size: 1.2rem; color: #666;">{{ item.quantity }}</div>
+                        </div>
+
+                        <div style="flex: 1; text-align: center;">
+                            <div style="font-weight: bold; color: #333;">Prix Unitaire</div>
+                            <div style="font-size: 1.2rem; color: #666;">${{ item.price }}</div>
+                        </div>
+
+                        <div style="flex: 1; text-align: right;">
+                            <div style="font-weight: bold; color: #333;">Sous-total</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${{ item.subtotal }}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="color: #666; text-align: center;">Aucun article dans cette commande</p>
+                    {% endfor %}
+
+                    <!-- Total -->
+                    <div
+                        style="display: flex; justify-content: between; align-items: center; padding: 1.5rem; background: #e9ecef; border-radius: 8px; margin-top: 1rem;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #333;">Total Général</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: #28a745;">${{ order.total_amount }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Timeline -->
+    <div class="timeline-card"
+        style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <h2 style="color: #333; margin-bottom: 1.5rem;">📊 Historique de la Commande</h2>
+
+        <div class="timeline" style="position: relative; padding-left: 2rem;">
+            <div class="timeline-item" style="position: relative; margin-bottom: 2rem;">
+                <div class="timeline-marker"
+                    style="position: absolute; left: -2rem; top: 0; width: 20px; height: 20px; background: #28a745; border-radius: 50%;">
+                </div>
+                <div class="timeline-content">
+                    <h4 style="color: #333; margin-bottom: 0.5rem;">✅ Commande Créée</h4>
+                    <p style="color: #666; margin-bottom: 0.5rem;">Votre commande a été créée avec succès</p>
+                    <small style="color: #999;">{{ order.created_at|date:"d/m/Y à H:i" }}</small>
+                </div>
+            </div>
+
+            {% if order.status != 'cart' %}
+            <div class="timeline-item" style="position: relative; margin-bottom: 2rem;">
+                <div class="timeline-marker"
+                    style="position: absolute; left: -2rem; top: 0; width: 20px; height: 20px; background: #28a745; border-radius: 50%;">
+                </div>
+                <div class="timeline-content">
+                    <h4 style="color: #333; margin-bottom: 0.5rem;">📦 Commande Confirmée</h4>
+                    <p style="color: #666; margin-bottom: 0.5rem;">Votre commande a été confirmée</p>
+                    <small style="color: #999;">{{ order.created_at|date:"d/m/Y à H:i" }}</small>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if order.status == 'shipped' or order.status == 'delivered' %}
+            <div class="timeline-item" style="position: relative; margin-bottom: 2rem;">
+                <div class="timeline-marker"
+                    style="position: absolute; left: -2rem; top: 0; width: 20px; height: 20px; background: #28a745; border-radius: 50%;">
+                </div>
+                <div class="timeline-content">
+                    <h4 style="color: #333; margin-bottom: 0.5rem;">🚚 Commande Expédiée</h4>
+                    <p style="color: #666; margin-bottom: 0.5rem;">Votre commande a été expédiée</p>
+                    <small style="color: #999;">{{ order.updated_at|date:"d/m/Y à H:i" }}</small>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if order.status == 'delivered' %}
+            <div class="timeline-item" style="position: relative;">
+                <div class="timeline-marker"
+                    style="position: absolute; left: -2rem; top: 0; width: 20px; height: 20px; background: #28a745; border-radius: 50%;">
+                </div>
+                <div class="timeline-content">
+                    <h4 style="color: #333; margin-bottom: 0.5rem;">🎉 Commande Livrée</h4>
+                    <p style="color: #666; margin-bottom: 0.5rem;">Votre commande a été livrée avec succès</p>
+                    <small style="color: #999;">{{ order.updated_at|date:"d/m/Y à H:i" }}</small>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 1.9rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+
+    .status-delivered {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-shipped {
+        background: #cce7ff;
+        color: #004085;
+    }
+
+    .status-paid {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-default {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+</style>
+{% endblock %}

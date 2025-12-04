@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Facture {{ invoice.invoice_number }} - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="invoice-page" style="max-width: 800px; margin: 0 auto;">
+    <div class="breadcrumb" style="margin-bottom: 2rem;">
+        <a href="{% url 'order_list' %}" style="color: #007bff; text-decoration: none;">📋 Mes Commandes</a>
+        <span style="margin: 0 0.5rem; color: #666;">/</span>
+        <a href="{% url 'order_detail' invoice.order.id %}" style="color: #007bff; text-decoration: none;">Commande #{{ invoice.order.id }}</a>
+        <span style="margin: 0 0.5rem; color: #666;">/</span>
+        <span style="color: #333;">Facture {{ invoice.invoice_number }}</span>
+    </div>
+
+    <!-- Invoice Printable Area -->
+    <div class="invoice-printable" style="background: white; padding: 3rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <!-- Invoice Header -->
+        <div class="invoice-header" style="display: flex; justify-content: between; align-items: start; margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 2px solid #dee2e6;">
+            <div>
+                <h1 style="color: #333; margin-bottom: 0.5rem; font-size: 2.5rem;">FACTURE</h1>
+                <p style="color: #666; margin-bottom: 0.5rem;">
+                    <strong>Numéro:</strong> {{ invoice.invoice_number }}
+                </p>
+                <p style="color: #666;">
+                    <strong>Date d'émission:</strong> {{ invoice.issue_date|date:"d/m/Y" }}
+                </p>
+            </div>
+            
+            <div style="text-align: right;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🛍️</div>
+                <h2 style="color: #333; margin-bottom: 0.5rem;">E-Commerce Platform</h2>
+                <p style="color: #666; margin: 0;">Université de Boumerdès</p>
+                <p style="color: #666; margin: 0;">contact@ecommerce.dz</p>
+            </div>
+        </div>
+
+        <!-- Client and Order Info -->
+        <div class="invoice-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 3rem;">
+            <div>
+                <h3 style="color: #333; margin-bottom: 1rem;">👤 Facturé à</h3>
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                    <p style="font-weight: bold; margin-bottom: 0.5rem;">{{ invoice.order.user.get_full_name|default:invoice.order.user.username }}</p>
+                    <p style="color: #666; margin-bottom: 0.5rem;">{{ invoice.order.user.email }}</p>
+                    <p style="color: #666; margin: 0;">Client</p>
+                </div>
+            </div>
+            
+            <div>
+                <h3 style="color: #333; margin-bottom: 1rem;">📋 Détails de la commande</h3>
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                    <p style="margin-bottom: 0.5rem;">
+                        <strong>Commande:</strong> #{{ invoice.order.id }}
+                    </p>
+                    <p style="margin-bottom: 0.5rem;">
+                        <strong>Date de commande:</strong> {{ invoice.order.created_at|date:"d/m/Y" }}
+                    </p>
+                    <p style="margin: 0;">
+                        <strong>Statut:</strong> {{ invoice.order.get_status_display }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Items -->
+        <div class="invoice-items" style="margin-bottom: 3rem;">
+            <h3 style="color: #333; margin-bottom: 1.5rem;">📦 Articles facturés</h3>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #343a40; color: white;">
+                        <th style="padding: 1rem; text-align: left;">Produit</th>
+                        <th style="padding: 1rem; text-align: center;">Quantité</th>
+                        <th style="padding: 1rem; text-align: right;">Prix Unitaire</th>
+                        <th style="padding: 1rem; text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in invoice.order.orderitem_set.all %}
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 1rem;">
+                            <strong>{{ item.product.name }}</strong>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                {{ item.product.shop.name }}
+                            </div>
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">{{ item.quantity }}</td>
+                        <td style="padding: 1rem; text-align: right;">${{ item.price }}</td>
+                        <td style="padding: 1rem; text-align: right; font-weight: bold;">${{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Invoice Total -->
+        <div class="invoice-total" style="display: flex; justify-content: end;">
+            <div style="width: 300px;">
+                <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
+                    <span style="color: #666;">Sous-total:</span>
+                    <span>${{ invoice.amount }}</span>
+                </div>
+                
+                <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
+                    <span style="color: #666;">Frais de livraison:</span>
+                    <span style="color: #28a745;">Gratuit</span>
+                </div>
+                
+                <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
+                    <span style="color: #666;">TVA (0%):</span>
+                    <span>$0.00</span>
+                </div>
+                
+                <hr style="margin: 1rem 0;">
+                
+                <div style="display: flex; justify-content: between;">
+                    <span style="font-size: 1.2rem; font-weight: bold; color: #333;">Total:</span>
+                    <span style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${{ invoice.amount }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="payment-info" style="margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #dee2e6;">
+            <h3 style="color: #333; margin-bottom: 1rem;">💳 Informations de paiement</h3>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                <p style="margin-bottom: 0.5rem;">
+                    <strong>Méthode de paiement:</strong> Carte de crédit
+                </p>
+                <p style="margin-bottom: 0.5rem;">
+                    <strong>Date de paiement:</strong> {{ invoice.issue_date|date:"d/m/Y" }}
+                </p>
+                <p style="margin: 0;">
+                    <strong>Statut:</strong> <span style="color: #28a745; font-weight: bold;">Payé</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="invoice-terms" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #dee2e6;">
+            <h4 style="color: #333; margin-bottom: 1rem;">📝 Conditions générales</h4>
+            <div style="color: #666; font-size: 0.9rem; line-height: 1.5;">
+                <p>Cette facture est établie conformément aux conditions générales de vente.</p>
+                <p>Paiement à réception de la facture. Tout retard de paiement pourra entraîner des pénalités.</p>
+                <p>Merci pour votre confiance.</p>
+            </div>
+        </div>
+
+        <!-- Invoice Footer -->
+        <div class="invoice-footer" style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #dee2e6; text-align: center;">
+            <p style="color: #666; margin-bottom: 0.5rem;">
+                E-Commerce Platform - Université de Boumerdès
+            </p>
+            <p style="color: #666; margin: 0;">
+                Contact: contact@ecommerce.dz | Tél: +213 XXX XX XX XX
+            </p>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="invoice-actions" style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+        <button onclick="window.print()" class="btn btn-primary">
+            🖨️ Imprimer la Facture
+        </button>
+        
+        <a href="{% url 'order_detail' invoice.order.id %}" class="btn btn-secondary" style="text-decoration: none;">
+            ← Retour à la Commande
+        </a>
+        
+        <a href="{% url 'order_list' %}" class="btn btn-secondary" style="text-decoration: none;">
+            📋 Mes Commandes
+        </a>
+    </div>
+</div>
+
+<style>
+@media print {
+    .breadcrumb, .invoice-actions {
+        display: none !important;
+    }
+    
+    .invoice-printable {
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

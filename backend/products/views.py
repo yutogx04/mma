@@ -1,308 +1,252 @@
+from django.contrib import messages 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
-from django.http import JsonResponse
-from django.views import View
-from django.utils.decorators import method_decorator
+from django.http import JsonResponse, HttpResponseForbidden
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
-import requests
+from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Q, Count
+from django.views.decorators.http import require_http_methods
+
 from .models import Product, Category
 from .forms import ProductForm
-from mma.backend.users.decorators import can_create_product, can_edit_product, can_delete_product
-from django.http import HttpResponseForbidden
+from users.decorators import vendor_required
+from users.permissions import can_edit_product, can_delete_product, can_create_product
+from shop.models import Shop
+from orders.models import Order, OrderItem
+from .serializers import ProductSerializer, CategorySerializer
 
 
-# Template Views
+# Template Views (Course 2 pattern)
+@require_http_methods(["GET"])
 def product_list(request):
-    if request.method == "POST":
-        return _create_product(request)
-    
+    """GET: Display all products"""
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     
-    products = Product.objects.all()
+    products = Product.objects.select_related('shop', 'category').all()
+    categories = Category.objects.all()
     
     if search_query:
         products = products.filter(name__icontains=search_query)
     if category_id:
         products = products.filter(category_id=category_id)
     
-    categories = Category.objects.all()
-    
     return render(request, "products/list.html", {
         'products': products,
         'categories': categories,
         'search_query': search_query,
-        'selected_category': category_id
+        'selected_category': category_id,
     })
 
-def _create_product(request):
-    if not request.user.is_authenticated or request.user.role != 'vendor':
-        return render(request, "products/list.html", {
-            'error': 'Only vendors can create products'
-        })
-    
-    form = ProductForm(request.POST)
-    if form.is_valid():
-        product = form.save(commit=False)
-        shop = request.user.shop_set.first()
-        if shop:
-            product.shop = shop
-            product.save()
-            return redirect('product_list')
-        else:
-            form.add_error(None, 'Vous devez avoir un magasin pour créer des produits')
-    
-    products = Product.objects.all()
-    categories = Category.objects.all()
-    return render(request, "products/list.html", {
-        'products': products,
-        'categories': categories,
-        'form': form
-    })
-
-def product_detail(request, product_id):
-    if request.method == "POST":
-        return _add_to_cart(request, product_id)
-    
-    product = get_object_or_404(Product, id=product_id)
-    
-    token = request.session.get('access_token')
-    if token:
-        headers = {"Authorization": f"Bearer {token}"}
-        response = requests.get(
-            f"http://127.0.0.1:8000/api/products/{product_id}/",
-            headers=headers
-        )
-        product_data = response.json() if response.status_code == 200 else None
-    else:
-        product_data = None
-    
-    return render(request, "products/detail.html", {
-        'product': product,
-        'product_data': product_data
-    })
-
-def _add_to_cart(request, product_id):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
-    quantity = int(request.POST.get("quantity", 1))
-    
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.post(
-        "http://127.0.0.1:8000/api/orders/create/",
-        data={
-            "product_id": product_id,
-            "quantity": quantity
-        },
-        headers=headers
-    )
-    
-    if response.status_code == 201:
-        return redirect('cart_view')
-    else:
-        product = get_object_or_404(Product, id=product_id)
-        return render(request, "products/detail.html", {
-            'product': product,
-            'error': 'Failed to add to cart'
-        })
-
+# PRODUCT CREATE - GET/POST (Course 2 - Form handling)
+@require_http_methods(["GET", "POST"])
 @login_required
 def create_product_view(request):
-    """Create product with permission check"""
-    if not can_create_product(request.user):
-        return HttpResponseForbidden("You don't have permission to create products")
+    """GET: Show form, POST: Create product"""
+    if not (request.user.role == 'vendor' or request.user.role == 'admin'):
+        return HttpResponseForbidden("Permission denied")
+    
+    categories = Category.objects.all()
     
     if request.method == 'POST':
         form = ProductForm(request.POST)
         if form.is_valid():
             product = form.save(commit=False)
-            shop = request.user.get_shop()
-            if shop:
-                product.shop = shop
+            
+            if request.user.role == 'vendor':
+                shop = request.user.shop_set.first()
+                if shop:
+                    product.shop = shop
+                    product.save()
+                    messages.success(request, "Produit créé avec succès!")
+                    return redirect('product_list')
+                else:
+                    form.add_error(None, 'Vous devez créer un magasin avant d\'ajouter des produits')
+            elif request.user.role == 'admin':
                 product.save()
+                messages.success(request, "Produit créé avec succès!")
                 return redirect('product_list')
-            else:
-                form.add_error(None, 'Vous devez avoir un magasin pour créer des produits')
     else:
         form = ProductForm()
     
-    return render(request, "products/create.html", {'form': form})
+    return render(request, "products/create.html", {
+        'form': form,
+        'categories': categories
+    })
 
+# PRODUCT UPDATE - GET/PUT (Course 2 - Form handling)
+@require_http_methods(["GET", "POST"])
 @login_required
 def update_product_view(request, product_id):
-    """Update product with permission check"""
+    """GET: Show form, POST/PUT: Update product"""
     product = get_object_or_404(Product, id=product_id)
     
-    if not can_edit_product(request.user, product):
-        return HttpResponseForbidden("You don't have permission to edit this product")
+    if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
+        return HttpResponseForbidden("Permission denied")
+    
+    categories = Category.objects.all()
     
     if request.method == 'POST':
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
             form.save()
+            messages.success(request, "Produit modifié avec succès!")
             return redirect('product_detail', product_id=product.id)
     else:
         form = ProductForm(instance=product)
-    
-    return render(request, "products/update.html", {'form': form})
 
+    return render(request, "products/update.html", {
+        'form': form,
+        'product': product,
+        'categories': categories 
+    })
+
+# PRODUCT DELETE - DELETE/POST (Course 2 - Form handling)
+@require_http_methods(["GET", "POST", "DELETE"])
 @login_required
 def delete_product_view(request, product_id):
-    """Delete product with permission check"""
+    """GET: Confirm, POST/DELETE: Delete product"""
     product = get_object_or_404(Product, id=product_id)
     
-    if not can_delete_product(request.user, product):
-        return HttpResponseForbidden("You don't have permission to delete this product")
+    if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
+        return HttpResponseForbidden("Permission denied")
     
-    if request.method == "POST":
-        token = request.session.get('access_token')
-        headers = {"Authorization": f"Bearer {token}"} if token else {}
+    if request.method in ['POST', 'DELETE']:
+        if product.orderitem_set.exists():
+            messages.error(request, "Impossible de supprimer un produit avec des commandes associées")
+            return redirect('product_detail', product_id=product.id)
         
-        response = requests.delete(
-            f"http://127.0.0.1:8000/api/products/{product_id}/delete/",
-            headers=headers
-        )
-        
-        if response.status_code == 204:
-            return redirect('product_list')
-        else:
-            return render(request, "products/list.html", {
-                'error': 'Failed to delete product'
-            })
+        product_name = product.name
+        product.delete()
+        messages.success(request, f'Produit "{product_name}" supprimé avec succès')
+        return redirect('product_list')
     
     return render(request, "products/delete_confirm.html", {
         'product': product
     })
 
-# API Views
-@api_view(['GET'])
-def product_list_api(request):
-    products = Product.objects.all()
-    data = [{
-        'id': product.id,
-        'name': product.name,
-        'price': str(product.price),
-        'stock_quantity': product.stock_quantity,
-        'shop_name': product.shop.name,
-        'category_name': product.category.name
-    } for product in products]
-    return Response(data)
-
-@api_view(['GET'])
-def product_detail_api(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    data = {
-        'id': product.id,
-        'name': product.name,
-        'description': product.description,
-        'price': str(product.price),
-        'stock_quantity': product.stock_quantity,
-        'shop': {
-            'id': product.shop.id,
-            'name': product.shop.name
-        },
-        'category': {
-            'id': product.category.id,
-            'name': product.category.name
-        },
-        'created_at': product.created_at
-    }
-    return Response(data)
-
-@api_view(['POST'])
-@permission_required('products.add_product', raise_exception=True)
-def product_create_api(request):
-    if not can_create_product(request.user):
-        return Response(
-            {'error': 'Permission denied'},
-            status=status.HTTP_403_FORBIDDEN
-        )
-    name = request.data.get('name')
-    price = request.data.get('price')
-    description = request.data.get('description')
-    stock_quantity = request.data.get('stock_quantity')
-    category_id = request.data.get('category_id')
-    shop_id = request.data.get('shop_id')
-    
-    if not all([name, price, description, stock_quantity, category_id, shop_id]):
-        return Response(
-            {'error': 'All fields are required'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    shop = get_object_or_404(request.user.shop_set, id=shop_id)
-    category = get_object_or_404(Category, id=category_id)
-    
-    product = Product.objects.create(
-        shop=shop,
-        category=category,
-        name=name,
-        description=description,
-        price=price,
-        stock_quantity=stock_quantity
-    )
-    
-    return Response({
-        'id': product.id,
-        'name': product.name,
-        'message': 'Product created successfully'
-    }, status=status.HTTP_201_CREATED)
-
-@api_view(['DELETE'])
-@permission_required('products.delete_product', raise_exception=True)
-def product_delete_api(request, product_id):
+# PRODUCT DETAIL - GET/POST
+@require_http_methods(["GET", "POST"])
+def product_detail(request, product_id):
+    """GET: Show product, POST: Add to cart"""
     product = get_object_or_404(Product, id=product_id)
     
-    if not can_delete_product(request.user, product):
-        return Response(
-            {'error': 'Permission denied'},
-            status=status.HTTP_403_FORBIDDEN
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('login')
+        
+        quantity = int(request.POST.get("quantity", 1))
+        
+        cart, created = Order.objects.get_or_create(
+            user=request.user,
+            status='cart',
+            defaults={'total_amount': 0}
         )
-    
-    if not can_edit_product(request.user, product):
-        return Response(
-            {'error': 'Permission denied'},
-            status=status.HTTP_403_FORBIDDEN
+        
+        order_item, created = OrderItem.objects.get_or_create(
+            order=cart,
+            product=product,
+            defaults={'quantity': quantity, 'price': product.price}
         )
-    if 'name' in request.data:
-        product.name = request.data['name']
-    if 'description' in request.data:
-        product.description = request.data['description']
-    if 'price' in request.data:
-        product.price = request.data['price']
-    if 'stock_quantity' in request.data:
-        product.stock_quantity = request.data['stock_quantity']
-    if 'category_id' in request.data:
-        category = get_object_or_404(Category, id=request.data['category_id'])
-        product.category = category
-    
-    product.save()
-    
-    return Response({
-        'id': product.id,
-        'name': product.name,
-        'message': 'Product updated successfully'
+        
+        if not created:
+            order_item.quantity += quantity
+            order_item.save()
+        
+        messages.success(request, "Produit ajouté au panier!")
+        return redirect('product_detail', product_id=product.id)
+
+    return render(request, "products/detail.html", {
+        'product': product
     })
 
-@api_view(['DELETE'])
-@permission_required('products.delete_product', raise_exception=True)
-def product_delete_api(request, product_id):
-    product = get_object_or_404(Product, id=product_id, shop__user=request.user)
+# Vendor products view
+@require_http_methods(["GET"])
+@login_required
+def vendor_products_view(request):
+    """GET: Show vendor's products"""
+    if request.user.role != 'vendor':
+        return HttpResponseForbidden("Access réservé aux vendeurs")
     
-    if product.orderitem_set.exists():
-        return Response(
-            {'error': 'Cannot delete product with existing orders'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    shop = get_object_or_404(Shop, user=request.user)
     
-    product_name = product.name
-    product.delete()
+    products = Product.objects.filter(shop=shop).select_related('category').annotate(
+        order_count=Count('orderitem')
+    ).order_by('-created_at')
     
-    return Response({
-        'message': f'Product "{product_name}" deleted successfully'
-    }, status=status.HTTP_204_NO_CONTENT)
+    low_stock_count = products.filter(stock_quantity__lt=10, stock_quantity__gt=0).count()
+    out_of_stock_count = products.filter(stock_quantity=0).count()
+    
+    context = {
+        'products': products,
+        'shop': shop,
+        'low_stock_count': low_stock_count,
+        'out_of_stock_count': out_of_stock_count,
+    }
+    
+    return render(request, "products/vendor_products.html", context)
+
+@require_http_methods(["POST"])
+def add_to_cart_view(request):
+    """Dedicated view for adding items to cart"""
+    product_id = request.POST.get("product_id")
+    quantity = int(request.POST.get("quantity", 1))
+    
+    if not product_id:
+        messages.error(request, "Produit non spécifié")
+        return redirect('product_list')
+    
+    product = get_object_or_404(Product, id=product_id)
+    
+    if quantity > product.stock_quantity:
+        messages.error(request, f"Stock insuffisant. Quantité disponible: {product.stock_quantity}")
+        return redirect('product_detail', product_id=product_id)
+    
+    cart, created = Order.objects.get_or_create(
+        user=request.user,
+        status='cart',
+        defaults={'total_amount': 0}
+    )
+    
+    order_item, item_created = OrderItem.objects.get_or_create(
+        order=cart,
+        product=product,
+        defaults={'quantity': quantity, 'price': product.price}
+    )
+    
+    if not item_created:
+        order_item.quantity += quantity
+        order_item.save()
+    
+    cart.total_amount = sum(
+        item.quantity * item.price for item in cart.orderitem_set.all()
+    )
+    cart.save()
+    
+    messages.success(request, f"✅ {product.name} ajouté au panier!")
+    
+    redirect_to = request.POST.get('redirect_to', 'cart_view')
+    if redirect_to == 'product_detail':
+        return redirect('product_detail', product_id=product_id)
+    return redirect('cart_view')
+
+
+# ModelViewSets (Course 2 - REST pattern)
+class ProductModelViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        if self.request.user.role == 'vendor':
+            shop = self.request.user.shop_set.first()
+            serializer.save(shop=shop)
+        else:
+            serializer.save()
+
+class CategoryModelViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticated]

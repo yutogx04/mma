@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     # Template Views
-    path('<int:invoice_id>/', views.invoice_detail_view, name='invoice_detail'),
+    path('frontend/<int:invoice_id>/', views.invoice_detail_view, name='invoice_detail'),
     
     # API Views
     path('api/create/', views.invoice_create_api, name='invoice_create_api'),

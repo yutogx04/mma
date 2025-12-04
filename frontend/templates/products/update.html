@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier {{ product.name }} - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="product-form" style="max-width: 600px; margin: 0 auto;">
+    <div class="form-header" style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="color: #333; margin-bottom: 0.5rem;">✏️ Modifier le Produit</h1>
+        <p style="color: #666;">Modifiez les informations de "{{ product.name }}"</p>
+    </div>
+
+    <div class="form-container" style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="_method" value="PUT">
+            
+            {% if form.non_field_errors %}
+                <div class="alert alert-error">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div style="display: grid; gap: 1.5rem;">
+                <div>
+                    <label for="id_name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">📝 Nom du produit:</label>
+                    <input type="text" name="name" id="id_name" required 
+                           value="{{ form.name.value|default:product.name }}"
+                           style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label for="id_price" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">💰 Prix ($):</label>
+                        <input type="number" name="price" id="id_price" step="0.01" required 
+                               value="{{ form.price.value|default:product.price }}"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+
+                    <div>
+                        <label for="id_stock_quantity" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">📦 Stock:</label>
+                        <input type="number" name="stock_quantity" id="id_stock_quantity" required 
+                               value="{{ form.stock_quantity.value|default:product.stock_quantity }}"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="id_category" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">📁 Catégorie:</label>
+                    <select name="category" id="id_category" required 
+                            style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if form.category.value == category.id or product.category.id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="id_description" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">📄 Description:</label>
+                    <textarea name="description" id="id_description" required 
+                              style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; height: 120px; resize: vertical;">{{ form.description.value|default:product.description }}</textarea>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+                <button type="submit" class="btn btn-warning" style="flex: 1; padding: 0.75rem; font-size: 1.1rem;">
+                    💾 Mettre à jour
+                </button>
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary" style="text-decoration: none; padding: 0.75rem 1.5rem;">
+                    ❌ Annuler
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

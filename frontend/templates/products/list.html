@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Produits - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="products-page animate-slide-up">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">📦 Tous les Produits</h1>
+        {% if perms.products.add_product %}
+        <a href="{% url 'create_product' %}" class="btn btn-success">
+            ➕ Ajouter un Produit
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filters-card">
+        <form method="get" action="{% url 'product_list' %}">
+            <div class="filters-grid">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">🔍 Rechercher</label>
+                    <input type="text" name="search" value="{{ search_query }}" placeholder="Nom du produit..."
+                        class="form-control">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">📁 Catégorie</label>
+                    <select name="category" class="form-control">
+                        <option value="">Toutes les catégories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex gap-2" style="align-self: end;">
+                    <button type="submit" class="btn btn-primary">
+                        🔍 Filtrer
+                    </button>
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                        🔄 Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-card-image">
+                📦
+            </div>
+
+            <div class="product-card-body">
+                <h3 class="product-card-title">{{ product.name }}</h3>
+                <p class="product-card-description">
+                    {{ product.description|truncatewords:15 }}
+                </p>
+
+                <div class="flex justify-between items-center">
+                    <span class="product-card-price">${{ product.price }}</span>
+                    <span class="badge badge-secondary">Stock: {{ product.stock_quantity }}</span>
+                </div>
+
+                <div class="product-card-meta">
+                    <span>🏪 {{ product.shop.name }}</span>
+                    <span>📁 {{ product.category.name }}</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="product-card-actions">
+                    <a href="{% url 'product_detail' product.id %}" class="btn btn-primary btn-sm" style="flex: 1;">
+                        👀 Voir
+                    </a>
+
+                    {% if user.role == 'customer' %}
+                    <form method="post" action="{% url 'product_detail' product.id %}" style="flex: 1;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm w-full">
+                            🛒 Ajouter
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if perms.products.change_product or perms.products.delete_product %}
+                    <div class="flex gap-1">
+                        {% if perms.products.change_product and product.shop.user == user or user.role == 'admin' %}
+                        <a href="{% url 'update_product' product.id %}" class="btn btn-warning btn-icon">
+                            ✏️
+                        </a>
+                        {% endif %}
+
+                        {% if perms.products.delete_product and product.shop.user == user or user.role == 'admin' %}
+                        <form method="post" action="{% url 'delete_product' product.id %}"
+                            data-confirm="Supprimer '{{ product.name }}'?">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-icon">
+                                🗑️
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-state-icon">😔</div>
+            <h3>Aucun produit trouvé</h3>
+            <p>Essayez de modifier vos critères de recherche ou ajoutez de nouveaux produits.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Quick Product Creation -->
+    {% if perms.products.add_product %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h3 style="margin: 0;">🚀 Ajout Rapide de Produit</h3>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'create_product' %}">
+                {% csrf_token %}
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="name" required class="form-control">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Prix</label>
+                        <input type="number" name="price" step="0.01" required class="form-control">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Stock</label>
+                        <input type="number" name="stock_quantity" required class="form-control">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Catégorie</label>
+                        <select name="category_id" required class="form-control">
+                            <option value="">Choisir...</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        ➕ Créer
+                    </button>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" required class="form-control" style="height: 80px;"></textarea>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -3,169 +3,199 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
-import requests
+from rest_framework import status, viewsets, permissions
+import pika
+import json
+from config import RABBITMQ_HOST
 from .models import Order, OrderItem
+from .serializers import OrderSerializer
 from products.models import Product
-from users.decorators import vendor_required
+from django.db.models import Sum, Count
+from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 
-# Template Views
+
+# ===========================================
+# TEMPLATE VIEWS
+# ===========================================
+
+@require_http_methods(["GET"])
 @login_required
 def order_list(request):
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    """GET: Display user's orders"""
+    status_filter = request.GET.get('status', '')
     
-    response = requests.get(
-        "http://127.0.0.1:8000/api/orders/",
-        headers=headers
-    )
+    if request.user.role == 'customer':
+        orders = Order.objects.filter(user=request.user)
+    elif request.user.role == 'vendor':
+        orders = Order.objects.filter(orderitem__product__shop__user=request.user).distinct()
+    else:
+        orders = Order.objects.all()
     
-    orders = response.json() if response.status_code == 200 else []
+    if status_filter:
+        orders = orders.filter(status=status_filter)
     
-    return render(request, "orders/list.html", {
-        'orders': orders
-    })
+    orders = orders.order_by('-created_at')
+    return render(request, "orders/list.html", {'orders': orders})
 
-@login_required
-def cart_view(request):
-    if not request.user.is_authenticated:
-        return redirect('login')
-    
-    if request.method == "POST":
-        action = request.POST.get("action")
-        
-        if action == "update_quantity":
-            return _update_cart_quantity(request)
-        elif action == "remove_item":
-            return _remove_cart_item(request)
-        elif action == "checkout":
-            return _checkout_cart(request)
-    
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.get(
-        "http://127.0.0.1:8000/api/orders/cart/",
-        headers=headers
-    )
-    
-    cart_data = response.json() if response.status_code == 200 else None
-    
-    return render(request, "orders/cart.html", {
-        'cart': cart_data
-    })
 
-def _update_cart_quantity(request):
-    item_id = request.POST.get("item_id")
-    quantity = int(request.POST.get("quantity", 1))
-    
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.put(
-        f"http://127.0.0.1:8000/api/order-items/{item_id}/update/",
-        data={"quantity": quantity},
-        headers=headers
-    )
-    
-    return redirect('cart_view')
-
-def _remove_cart_item(request):
-    item_id = request.POST.get("item_id")
-    
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.delete(
-        f"http://127.0.0.1:8000/api/order-items/{item_id}/delete/",
-        headers=headers
-    )
-    
-    return redirect('cart_view')
-
-def _checkout_cart(request):
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.get(
-        "http://127.0.0.1:8000/api/orders/cart/",
-        headers=headers
-    )
-    
-    if response.status_code == 200:
-        cart_data = response.json()
-        order_id = cart_data.get('id')
-        
-        checkout_response = requests.post(
-            f"http://127.0.0.1:8000/api/orders/{order_id}/checkout/",
-            headers=headers
-        )
-        
-        if checkout_response.status_code == 200:
-            return redirect('order_list')
-        else:
-            return render(request, "orders/cart.html", {
-                'cart': cart_data,
-                'error': 'Checkout failed'
-            })
-    
-    return redirect('cart_view')
-
+@require_http_methods(["GET", "POST"])
 @login_required
 def order_detail(request, order_id):
-    if request.method == "POST":
+    """GET: Show order, POST: Update/Cancel order"""
+    if request.user.role == 'customer':
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+    elif request.user.role == 'vendor':
+        order = get_object_or_404(Order, id=order_id, orderitem__product__shop__user=request.user)
+    else:
+        order = get_object_or_404(Order, id=order_id)
+    
+    if request.method == 'POST':
         action = request.POST.get("action")
         
         if action == "cancel_order":
-            return _cancel_order(request, order_id)
+            if order.status in ['cart', 'pending']:
+                order.status = 'cancelled'
+                order.save()
+                messages.success(request, "Commande annulée avec succès")
+            return redirect('order_list')
+            
         elif action == "update_status":
-            return _update_order_status(request, order_id)
+            new_status = request.POST.get("status")
+            if (request.user.role == 'vendor' and new_status in ['shipped', 'delivered']) or request.user.role == 'admin':
+                order.status = new_status
+                order.save()
+                messages.success(request, f"Statut mis à jour: {new_status}")
+            return redirect('order_detail', order_id=order.id)
     
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    return render(request, "orders/detail.html", {'order': order})
+
+
+@require_http_methods(["GET", "POST"])
+@login_required
+def cart_view(request):
+    """GET: Show cart, POST: Various cart actions"""
+    cart = Order.objects.filter(user=request.user, status='cart').first()
     
-    response = requests.get(
-        f"http://127.0.0.1:8000/api/orders/{order_id}/",
-        headers=headers
+    if request.method == 'POST':
+        action = request.POST.get("action")
+        
+        if action == "update_quantity":
+            item_id = request.POST.get("item_id")
+            quantity = int(request.POST.get("quantity", 1))
+            cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+            
+            if quantity > 0:
+                cart_item.quantity = quantity
+                cart_item.save()
+                # Update cart total
+                if cart:
+                    cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
+                    cart.save()
+                messages.success(request, "Quantité mise à jour")
+            return redirect('cart_view')
+            
+        elif action == "remove_item":
+            item_id = request.POST.get("item_id")
+            cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+            cart_item.delete()
+            # Update cart total
+            if cart:
+                cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
+                cart.save()
+            messages.success(request, "Article retiré du panier")
+            return redirect('cart_view')
+            
+        elif action == "checkout":
+            if not cart or not cart.orderitem_set.exists():
+                messages.error(request, "Panier vide")
+                return redirect('cart_view')
+            
+            cart.status = 'pending'
+            cart.save()
+            
+            # Publish message to RabbitMQ
+            message = {
+                "order_id": cart.id,
+                "user_id": request.user.id,
+                "amount": str(cart.total_amount),
+                "status": "en attente de paiement"
+            }
+            
+            try:
+                with pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST)) as connection:
+                    channel = connection.channel()
+                    channel.queue_declare(queue='payment', durable=True)
+                    channel.basic_publish(
+                        exchange='',
+                        routing_key='payment',
+                        body=json.dumps(message)
+                    )
+            except Exception as e:
+                print(f"RabbitMQ error: {e}")
+            
+            messages.success(request, "Commande passée avec succès!")
+            return redirect('order_list')
+            
+        elif action == "clear_cart":
+            if cart:
+                cart.orderitem_set.all().delete()
+                cart.total_amount = 0
+                cart.save()
+                messages.success(request, "Panier vidé")
+            return redirect('cart_view')
+    
+    # GET - Show cart
+    return render(request, "orders/cart.html", {'cart': cart})
+
+
+@require_http_methods(["POST"])
+@login_required
+def add_to_cart_view(request):
+    """Add item to cart from product page"""
+    product_id = request.POST.get("product_id")
+    quantity = int(request.POST.get("quantity", 1))
+    
+    if not product_id:
+        messages.error(request, "Produit non spécifié")
+        return redirect('product_list')
+    
+    product = get_object_or_404(Product, id=product_id)
+    
+    if quantity > product.stock_quantity:
+        messages.error(request, f"Stock insuffisant. Disponible: {product.stock_quantity}")
+        return redirect('product_detail', product_id=product_id)
+    
+    # Get or create cart
+    cart, created = Order.objects.get_or_create(
+        user=request.user,
+        status='cart',
+        defaults={'total_amount': 0}
     )
     
-    order_data = response.json() if response.status_code == 200 else None
-    
-    return render(request, "orders/detail.html", {
-        'order': order_data
-    })
-
-def _cancel_order(request, order_id):
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.delete(
-        f"http://127.0.0.1:8000/api/orders/{order_id}/delete/",
-        headers=headers
+    # Add or update item
+    order_item, item_created = OrderItem.objects.get_or_create(
+        order=cart,
+        product=product,
+        defaults={'quantity': quantity, 'price': product.price}
     )
     
-    if response.status_code == 204:
-        return redirect('order_list')
-    else:
-        return render(request, "orders/detail.html", {
-            'error': 'Failed to cancel order'
-        })
+    if not item_created:
+        order_item.quantity += quantity
+        order_item.save()
+    
+    # Update cart total
+    cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
+    cart.save()
+    
+    messages.success(request, f"{product.name} ajouté au panier")
+    return redirect('cart_view')
 
-def _update_order_status(request, order_id):
-    new_status = request.POST.get("status")
-    
-    token = request.session.get('access_token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    response = requests.put(
-        f"http://127.0.0.1:8000/api/orders/{order_id}/update/",
-        data={"status": new_status},
-        headers=headers
-    )
-    
-    return redirect('order_detail', order_id=order_id)
 
-# API Views
+# ===========================================
+# API VIEWS
+# ===========================================
+
 @api_view(['GET'])
 @login_required
 def order_list_api(request):
@@ -187,8 +217,7 @@ def order_list_api(request):
             'items': []
         }
         
-        items = OrderItem.objects.filter(order=order)
-        for item in items:
+        for item in order.orderitem_set.all():
             order_data['items'].append({
                 'product_name': item.product.name,
                 'quantity': item.quantity,
@@ -200,6 +229,7 @@ def order_list_api(request):
     
     return Response(data)
 
+
 @api_view(['GET'])
 @login_required
 def order_detail_api(request, order_id):
@@ -209,8 +239,6 @@ def order_detail_api(request, order_id):
         order = get_object_or_404(Order, id=order_id, orderitem__product__shop__user=request.user)
     else:
         order = get_object_or_404(Order, id=order_id)
-    
-    items = OrderItem.objects.filter(order=order)
     
     data = {
         'id': order.id,
@@ -230,10 +258,11 @@ def order_detail_api(request, order_id):
             'quantity': item.quantity,
             'price': str(item.price),
             'subtotal': str(item.quantity * item.price)
-        } for item in items]
+        } for item in order.orderitem_set.all()]
     }
     
     return Response(data)
+
 
 @api_view(['POST'])
 @login_required
@@ -259,16 +288,16 @@ def order_create_api(request):
         order_item.quantity += quantity
         order_item.save()
     
-    cart_total = sum(item.quantity * item.price for item in cart.orderitem_set.all())
-    cart.total_amount = cart_total
+    cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
     cart.save()
     
     return Response({
         'order_id': cart.id,
         'message': 'Product added to cart',
-        'cart_total': str(cart_total),
+        'cart_total': str(cart.total_amount),
         'items_count': cart.orderitem_set.count()
     }, status=status.HTTP_201_CREATED)
+
 
 @api_view(['PUT'])
 @login_required
@@ -290,7 +319,7 @@ def order_update_api(request, order_id):
     
     elif request.user.role == 'admin':
         new_status = request.data.get('status')
-        if new_status in dict(Order.STATUS_CHOICES):
+        if new_status:
             order.status = new_status
             order.save()
     
@@ -299,6 +328,7 @@ def order_update_api(request, order_id):
         'status': order.status,
         'message': 'Order updated successfully'
     })
+
 
 @api_view(['DELETE'])
 @login_required
@@ -310,7 +340,6 @@ def order_delete_api(request, order_id):
                 {'error': 'Cannot delete order in current status'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
     elif request.user.role == 'admin':
         order = get_object_or_404(Order, id=order_id)
     else:
@@ -319,11 +348,14 @@ def order_delete_api(request, order_id):
             status=status.HTTP_403_FORBIDDEN
         )
     
-    order.delete()
+    order.status = 'cancelled'
+    order.save()
+    
     return Response(
-        {'message': 'Order deleted successfully'},
+        {'message': 'Order cancelled successfully'},
         status=status.HTTP_204_NO_CONTENT
     )
+
 
 @api_view(['POST'])
 @login_required
@@ -354,3 +386,45 @@ def order_checkout_api(request, order_id):
         'message': 'Checkout successful',
         'total_amount': str(order.total_amount)
     })
+
+
+@api_view(['GET'])
+@login_required
+def cart_api(request):
+    cart = Order.objects.filter(user=request.user, status='cart').first()
+    
+    if not cart:
+        return Response({'message': 'Cart is empty'}, status=status.HTTP_200_OK)
+    
+    data = {
+        'id': cart.id,
+        'total_amount': str(cart.total_amount),
+        'items': [{
+            'id': item.id,
+            'product_id': item.product.id,
+            'product_name': item.product.name,
+            'quantity': item.quantity,
+            'price': str(item.price),
+            'subtotal': str(item.quantity * item.price)
+        } for item in cart.orderitem_set.all()]
+    }
+    
+    return Response(data)
+
+
+# ===========================================
+# VIEWSET (Course Pattern)
+# ===========================================
+
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'customer':
+            return Order.objects.filter(user=user)
+        elif user.role == 'vendor':
+            return Order.objects.filter(orderitem__product__shop__user=user).distinct()
+        return Order.objects.all()

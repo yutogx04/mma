@@ -1,8 +1,31 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from .permissions import can_create_product, can_edit_product, can_delete_product
+from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
 
-class User(AbstractUser):
+
+class CompteManager(BaseUserManager):
+    """Custom manager for Compte model"""
+    
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'admin')
+        return self.create_user(email, password, **extra_fields)
+
+
+class Compte(AbstractUser):
+    """
+    Custom user model following course pattern
+    Uses email as unique identifier, with role-based access
+    """
     ROLE_CHOICES = [
         ('customer', 'Customer'),
         ('vendor', 'Vendor'),
@@ -13,6 +36,10 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    objects = CompteManager()
+    
+    REQUIRED_FIELDS = ['email', 'role']
     
     def __str__(self):
         return f"{self.username} ({self.role})"
@@ -26,14 +53,16 @@ class User(AbstractUser):
     def is_customer(self):
         return self.role == 'customer'
     
-    # Permission shortcut methods
     def can_create_products(self):
+        from .permissions import can_create_product
         return can_create_product(self)
     
     def can_edit_product(self, product):
+        from .permissions import can_edit_product
         return can_edit_product(self, product)
     
     def can_delete_product(self, product):
+        from .permissions import can_delete_product
         return can_delete_product(self, product)
     
     def get_shop(self):
@@ -42,10 +71,6 @@ class User(AbstractUser):
             return self.shop_set.first()
         return None
 
-class Shop(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'vendor'})
-    name = models.CharField(max_length=100)
-    description = models.TextField()
-    
-    def __str__(self):
-        return self.name
+
+# Alias for backward compatibility
+User = Compte

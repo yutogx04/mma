@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Déconnexion - E-Commerce{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto; padding: 3rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+    <h2 style="margin-bottom: 2rem; color: #333;">👋 Déconnexion</h2>
+    
+    <p style="margin-bottom: 2rem; font-size: 1.1rem; color: #666;">
+        Êtes-vous sûr de vouloir vous déconnecter?
+    </p>
+    
+    <form method="post" style="margin-bottom: 2rem;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="padding: 0.75rem 2rem; font-size: 1.1rem;">
+            ✅ Oui, me déconnecter
+        </button>
+    </form>
+    
+    <a href="{% url 'dashboard' %}" class="btn btn-secondary" style="text-decoration: none;">
+        ❌ Non, rester connecté
+    </a>
+</div>
+{% endblock %}
