@@ -368,114 +368,35 @@ def user_update_api(request):
 
 @login_required
 def admin_dashboard_view(request):
-    """Admin-specific dashboard with platform analytics"""
+    """Redirect to Django admin"""
     if request.user.role != 'admin':
         return HttpResponseForbidden("Admin access required")
-    
-    # Platform statistics
-    total_users = User.objects.count()
-    total_vendors = User.objects.filter(role='vendor').count()
-    total_customers = User.objects.filter(role='customer').count()
-    total_products = Product.objects.count()
-    total_orders = Order.objects.count()
-    total_shops = Shop.objects.count()
-    
-    # Revenue calculations
-    total_revenue = Order.objects.filter(
-        status__in=['paid', 'shipped', 'delivered']
-    ).aggregate(total=Sum('total_amount'))['total'] or 0
-    
-    # Recent activity (last 7 days)
-    week_ago = timezone.now() - timedelta(days=7)
-    recent_users = User.objects.filter(date_joined__gte=week_ago).count()
-    recent_orders = Order.objects.filter(created_at__gte=week_ago).count()
-    recent_products = Product.objects.filter(created_at__gte=week_ago).count()
-    
-    # Top vendors by sales
-    top_vendors = Shop.objects.annotate(
-        total_sales=Count('product__orderitem'),
-        total_revenue=Sum('product__orderitem__price')
-    ).order_by('-total_sales')[:5]
-    
-    # Recent orders for admin view
-    recent_orders_list = Order.objects.select_related('user').order_by('-created_at')[:10]
-    
-    context = {
-        'total_users': total_users,
-        'total_vendors': total_vendors,
-        'total_customers': total_customers,
-        'total_products': total_products,
-        'total_orders': total_orders,
-        'total_shops': total_shops,
-        'total_revenue': total_revenue,
-        'recent_users': recent_users,
-        'recent_orders': recent_orders,
-        'recent_products': recent_products,
-        'top_vendors': top_vendors,
-        'recent_orders_list': recent_orders_list,
-    }
-    
-    return render(request, "admin/dashboard.html", context)
+    return redirect('/admin/')
 
 @login_required
 def admin_user_management_view(request):
-    """Admin user management interface"""
+    """Redirect to Django admin users"""
     if request.user.role != 'admin':
         return HttpResponseForbidden("Admin access required")
-    
-    users = User.objects.all().order_by('-date_joined')
-    role_filter = request.GET.get('role', '')
-    
-    if role_filter:
-        users = users.filter(role=role_filter)
-    
-    return render(request, "admin/user_management.html", {
-        'users': users,
-        'role_filter': role_filter
-    })
+    return redirect('/admin/users/compte/')
 
 @login_required
 def admin_shop_management_view(request):
-    """Admin shop management interface"""
+    """Redirect to Django admin shops"""
     if request.user.role != 'admin':
         return HttpResponseForbidden("Admin access required")
-    
-    shops = Shop.objects.select_related('user').annotate(
-        product_count=Count('product'),
-        order_count=Count('product__orderitem')
-    ).order_by('-product_count')
-    
-    return render(request, "admin/shop_management.html", {
-        'shops': shops
-    })
+    return redirect('/admin/shop/shop/')
 
 @login_required
 def admin_product_management_view(request):
-    """Admin product management interface"""
+    """Redirect to Django admin products"""
     if request.user.role != 'admin':
         return HttpResponseForbidden("Admin access required")
-    
-    products = Product.objects.select_related('shop', 'category').annotate(
-        order_count=Count('orderitem')
-    ).order_by('-created_at')
-    
-    return render(request, "admin/product_management.html", {
-        'products': products
-    })
+    return redirect('/admin/products/product/')
 
 @login_required
 def admin_order_management_view(request):
-    """Admin order management interface"""
+    """Redirect to Django admin orders"""
     if request.user.role != 'admin':
         return HttpResponseForbidden("Admin access required")
-    
-    orders = Order.objects.select_related('user').prefetch_related('orderitem_set').order_by('-created_at')
-    status_filter = request.GET.get('status', '')
-    
-    if status_filter:
-        orders = orders.filter(status=status_filter)
-    
-    return render(request, "admin/order_management.html", {
-        'orders': orders,
-        'status_filter': status_filter
-    })
+    return redirect('/admin/orders/order/')
