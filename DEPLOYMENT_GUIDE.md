@@ -1,56 +1,16 @@
-# Multi-Server Deployment Guide (Without Docker)
+# Multi-Server Deployment Guide 
 
 ## Overview
-This guide explains how to deploy the MMA project across multiple physical machines/servers.
+So in here i'm gonna try and explain how to deploy the WAMS project across the machines/servers we're gonna use.
 
----
 
-## Architecture
-
-```
-┌─────────────────┐     ┌─────────────────┐
-│   Machine 1     │     │   Machine 2     │
-│   (Frontend)    │────▶│   (Traefik)     │
-│   User Browser  │     │   Reverse Proxy │
-└─────────────────┘     └────────┬────────┘
-                                 │
-        ┌────────────────────────┼────────────────────────┐
-        ▼                        ▼                        ▼
-┌───────────────┐     ┌───────────────┐     ┌───────────────┐
-│   Machine 3   │     │   Machine 4   │     │   Machine 5   │
-│   Django API  │────▶│   RabbitMQ    │◀────│   Worker      │
-│   Port 8000   │     │   Port 5672   │     │   (Consumer)  │
-└───────┬───────┘     └───────────────┘     └───────────────┘
-        │
-        ▼
-┌───────────────┐
-│   Machine 6   │
-│   Consul      │
-│   Port 8500   │
-└───────────────┘
-```
-
----
-
-## Machine Requirements
-
-| Machine | Role | Software | Port |
-|---------|------|----------|------|
-| Machine 1 | User | Web Browser | - |
-| Machine 2 | Traefik | Traefik binary | 80, 8080 |
-| Machine 3 | Django API | Python 3.13, Django | 8000 |
-| Machine 4 | RabbitMQ | RabbitMQ Server | 5672, 15672 |
-| Machine 5 | Worker | Python 3.13, Django | - |
-| Machine 6 | Consul | Consul binary | 8500 |
-
----
 
 ## Step 1: Configure IP Addresses
 
-Edit `backend/config.py` with your machine IPs:
+So in the project, we're gonna edit `backend/config.py` with the machine IPs we're gonna use:
 
-```python
-# Example IPs - Replace with YOUR actual machine IPs
+# Example IPs - Replace with our actual IP's but since we're only three people, one will have to start two inside his
+
 DJANGO_HOST = "192.168.1.10"
 DJANGO_PORT = 8000
 RABBITMQ_HOST = "192.168.1.11"
@@ -58,15 +18,12 @@ RABBITMQ_PORT = 5672
 CONSUL_HOST = "192.168.1.12"
 CONSUL_PORT = 8500
 TRAEFIK_HOST = "192.168.1.13"
-```
-
----
 
 ## Step 2: Setup Each Machine
+(Sidenote: since again we are only 3 people, one will have to start multiple services on his machine, this is just an example of an implementation)
 
-### Machine 3 - Django API Server
+### Machine for Django API Server
 
-```bash
 # 1. Copy project to this machine
 # 2. Install Python 3.13
 # 3. Install dependencies
@@ -77,37 +34,36 @@ pip install -r requirements.txt
 # Edit .env file with correct IPs
 
 # 5. Run Django
-python manage.py runserver 0.0.0.0:8000
-```
+python manage.py runserver 
 
-### Machine 4 - RabbitMQ Server
 
-```bash
-# Windows: Download from https://www.rabbitmq.com/download.html
+### Machine for RabbitMQ Server
+
+
+# Windows: Download from https://www.rabbitmq.com/download.html, for linux i don't know but it should be on the official page there is a command to download it
 # Install Erlang first, then RabbitMQ
 
 # Start RabbitMQ
 rabbitmq-server
 
-# Enable management UI (optional)
+# Enable management UI (optional but we should do it for more clarity)
 rabbitmq-plugins enable rabbitmq_management
 # Access at http://192.168.1.11:15672 (guest/guest)
-```
 
-### Machine 5 - Worker (Payment Consumer)
 
-```bash
+### Machine for Worker (Payment Consumer)
+
+
 # 1. Copy project to this machine
 # 2. Install Python and dependencies
 pip install -r requirements.txt
 
 # 3. Run the consumer
 python manage.py start_consumer
-```
 
-### Machine 6 - Consul Server
 
-```bash
+### Machine for Consul Server
+
 # Download from https://www.consul.io/downloads
 # Extract consul.exe
 
@@ -115,12 +71,12 @@ python manage.py start_consumer
 consul agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.12
 
 # Access UI at http://192.168.1.12:8500
-```
 
-### Machine 2 - Traefik Reverse Proxy
 
-```bash
-# Download from https://github.com/traefik/traefik/releases
+### Machine for Traefik Reverse Proxy
+
+
+# Download from https://github.com/traefik/traefik/releases or just type the command for linux
 # Extract traefik.exe
 
 # Copy traefik.yml and dynamic.yml to same folder
@@ -130,15 +86,12 @@ consul agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.12
 traefik --configFile=traefik.yml
 
 # Dashboard at http://192.168.1.13:8080
-```
 
----
 
 ## Step 3: Network Configuration
 
-1. All machines must be on the **same network** (or have routes)
+1. All machines must be on the **same network** (or have routes), in this one preferbly a phone
 2. Open required ports in **Windows Firewall**:
-   ```powershell
    # On Django machine
    netsh advfirewall firewall add rule name="Django" dir=in action=allow protocol=TCP localport=8000
    
@@ -147,23 +100,19 @@ traefik --configFile=traefik.yml
    
    # On Consul machine
    netsh advfirewall firewall add rule name="Consul" dir=in action=allow protocol=TCP localport=8500
-   ```
 
----
 
-## Step 4: Start Order (Important!)
+## Step 4: Start Order (This is very important for everything to work!)
 
-1. **First**: Start Consul (Machine 6)
-2. **Second**: Start RabbitMQ (Machine 4)
-3. **Third**: Start Django (Machine 3)
-4. **Fourth**: Start Worker (Machine 5)
-5. **Last**: Start Traefik (Machine 2)
+1. **First**: Start Consul 
+2. **Second**: Start RabbitMQ 
+3. **Third**: Start Django 
+4. **Fourth**: Start Worker 
+5. **Last**: Start Traefik 
 
----
 
 ## Step 5: Verify Deployment
 
-```bash
 # Check health (from any machine)
 curl http://192.168.1.10:8000/health/
 # Should return: {"status": "ok"}
@@ -176,15 +125,12 @@ curl http://192.168.1.10:8000/health/
 
 # Check Traefik Dashboard
 # Open: http://192.168.1.13:8080
-```
-
----
 
 ## Using Phones as Servers
 
-Yes, you can use phones running **Termux** (Android):
+And yes, like you said faical we're gonna use phones running commands via something called **Termux** for Android or maybe you know of some other things to host with a phone:
 
-```bash
+
 # On Android phone with Termux
 pkg install python
 pip install django djangorestframework pika
@@ -192,6 +138,6 @@ pip install django djangorestframework pika
 # Run Django
 cd backend
 python manage.py runserver 0.0.0.0:8000
-```
 
 Get phone IP: Settings → WiFi → Your network → IP address
+
