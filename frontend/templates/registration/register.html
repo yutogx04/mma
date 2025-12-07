@@ -69,8 +69,18 @@
                 </div>
             </div>
 
-            <!-- Hidden field - always creates customer account -->
-            <input type="hidden" name="role" value="customer">
+            <div class="form-group">
+                <label for="id_role" class="form-label">Type de compte</label>
+                <select name="role" id="id_role" required class="form-control">
+                    <option value="customer" {% if form.role.value=='customer' %}selected{% endif %}>👤 Client</option>
+                    <option value="vendor" {% if form.role.value=='vendor' %}selected{% endif %}>🏪 Vendeur</option>
+                </select>
+                {% if form.role.errors %}
+                <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
+                    {% for error in form.role.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
 
             <button type="submit" class="btn btn-success btn-lg w-full">
                 ✅ Créer mon compte
