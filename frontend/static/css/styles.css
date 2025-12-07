@@ -1,18 +1,11 @@
-/* ==========================================
-   E-Commerce Modern Design System
-   Inspired by Emploitic's clean aesthetic
-   ========================================== */
 
-/* ==========================================
-   CSS VARIABLES - LIGHT/DARK THEME
-   ========================================== */
+
 :root {
-    /* Primary Colors */
+    
     --primary: #0077FF;
     --primary-hover: #0062cc;
     --primary-light: #e6f2ff;
 
-    /* Success/Warning/Error */
     --success: #10b981;
     --success-hover: #059669;
     --warning: #f59e0b;
@@ -20,7 +13,6 @@
     --danger: #ef4444;
     --danger-hover: #dc2626;
 
-    /* Grays */
     --gray-50: #f9fafb;
     --gray-100: #f3f4f6;
     --gray-200: #e5e7eb;
@@ -32,7 +24,6 @@
     --gray-800: #1f2937;
     --gray-900: #111827;
 
-    /* Theme Colors */
     --bg-primary: #ffffff;
     --bg-secondary: #f8fafc;
     --bg-tertiary: #f1f5f9;
@@ -43,20 +34,17 @@
     --shadow-color: rgba(0, 0, 0, 0.08);
     --shadow-lg: rgba(0, 0, 0, 0.1);
 
-    /* Header/Footer */
     --header-bg: #ffffff;
     --header-text: #1e293b;
     --footer-bg: #f1f5f9;
     --footer-text: #475569;
     --footer-heading: #1e293b;
 
-    /* Sidebar */
     --sidebar-bg: #ffffff;
     --sidebar-border: #e2e8f0;
     --sidebar-active: #0077FF;
     --sidebar-hover: #f1f5f9;
 
-    /* Spacing */
     --spacing-xs: 0.25rem;
     --spacing-sm: 0.5rem;
     --spacing-md: 1rem;
@@ -64,18 +52,15 @@
     --spacing-xl: 2rem;
     --spacing-2xl: 3rem;
 
-    /* Border Radius */
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 16px;
     --radius-full: 9999px;
 
-    /* Transitions */
     --transition-fast: 150ms ease;
     --transition-normal: 250ms ease;
     --transition-slow: 350ms ease;
 
-    /* Typography */
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
@@ -86,7 +71,6 @@
     --font-size-3xl: 2rem;
 }
 
-/* Dark Mode Variables */
 body.dark-mode {
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
@@ -111,9 +95,6 @@ body.dark-mode {
     --primary-light: #1e3a5f;
 }
 
-/* ==========================================
-   RESET & BASE
-   ========================================== */
 *,
 *::before,
 *::after {
@@ -150,9 +131,6 @@ img {
     height: auto;
 }
 
-/* ==========================================
-   LAYOUT
-   ========================================== */
 .app-container {
     display: flex;
     min-height: 100vh;
@@ -178,9 +156,6 @@ img {
     margin: 0 auto;
 }
 
-/* ==========================================
-   HEADER
-   ========================================== */
 .header {
     background: var(--header-bg);
     border-bottom: 1px solid var(--border-color);
@@ -255,7 +230,6 @@ img {
     background-color: var(--primary-light);
 }
 
-/* Dark Mode Toggle */
 .theme-toggle {
     background: none;
     border: 1px solid var(--border-color);
@@ -292,7 +266,6 @@ body.dark-mode .theme-toggle .icon-moon {
     display: none;
 }
 
-/* User Badge */
 .user-badge {
     display: flex;
     align-items: center;
@@ -308,9 +281,6 @@ body.dark-mode .theme-toggle .icon-moon {
     color: var(--text-primary);
 }
 
-/* ==========================================
-   SIDEBAR
-   ========================================== */
 .sidebar {
     position: fixed;
     left: 0;
@@ -382,7 +352,6 @@ body.dark-mode .theme-toggle .icon-moon {
     text-align: center;
 }
 
-/* Sidebar Overlay for Mobile */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -398,9 +367,6 @@ body.dark-mode .theme-toggle .icon-moon {
     opacity: 1;
 }
 
-/* ==========================================
-   BUTTONS
-   ========================================== */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -502,9 +468,6 @@ body.dark-mode .btn-secondary:hover {
     height: 36px;
 }
 
-/* ==========================================
-   CARDS
-   ========================================== */
 .card {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
@@ -571,7 +534,6 @@ textarea.form-control {
     min-height: 100px;
 }
 
-/* Search Box */
 .search-box {
     position: relative;
 }
@@ -589,9 +551,6 @@ textarea.form-control {
     font-size: 1rem;
 }
 
-/* ==========================================
-   ALERTS
-   ========================================== */
 .alert {
     padding: var(--spacing-md) var(--spacing-lg);
     border-radius: var(--radius-md);
@@ -664,9 +623,6 @@ body.dark-mode .alert-info {
     border-color: #1e40af;
 }
 
-/* ==========================================
-   BADGES
-   ========================================== */
 .badge {
     display: inline-flex;
     align-items: center;
@@ -701,7 +657,6 @@ body.dark-mode .alert-info {
     color: var(--text-secondary);
 }
 
-/* Dark mode badges */
 body.dark-mode .badge-success {
     background: #064e3b;
     color: #a7f3d0;
@@ -717,33 +672,27 @@ body.dark-mode .badge-danger {
     color: #fecaca;
 }
 
-/* Dark mode form select dropdown arrow */
 body.dark-mode select.form-control {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
-/* Dark mode product card image gradient */
 body.dark-mode .product-card-image {
     background: linear-gradient(135deg, #1e40af 0%, #4338ca 100%);
 }
 
-/* Dark mode welcome banner */
 body.dark-mode .welcome-banner {
     background: linear-gradient(135deg, #1e40af 0%, #4338ca 100%);
 }
 
-/* Dark mode stat cards */
 body.dark-mode .stat-card {
     background: var(--bg-primary);
     border-color: var(--border-color);
 }
 
-/* Dark mode hr elements */
 body.dark-mode hr {
     border-color: var(--border-color);
 }
 
-/* Additional dark mode fixes for inline styles */
 body.dark-mode [style*="background: #f8f9fa"],
 body.dark-mode [style*="background: white"],
 body.dark-mode [style*="background:#f8f9fa"] {
@@ -771,9 +720,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     border-color: var(--border-color) !important;
 }
 
-/* ==========================================
-   TABLES
-   ========================================== */
 .table-container {
     overflow-x: auto;
     border-radius: var(--radius-lg);
@@ -810,9 +756,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     border-bottom: none;
 }
 
-/* ==========================================
-   FOOTER
-   ========================================== */
 .footer {
     background: var(--footer-bg);
     border-top: 1px solid var(--border-color);
@@ -916,9 +859,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     color: white;
 }
 
-/* ==========================================
-   PAGE SPECIFIC - DASHBOARD
-   ========================================== */
 .welcome-banner {
     background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
     color: white;
@@ -1009,9 +949,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     font-size: var(--font-size-sm);
 }
 
-/* ==========================================
-   PAGE SPECIFIC - PRODUCTS
-   ========================================== */
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -1046,9 +983,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     gap: var(--spacing-xl);
 }
 
-/* ==========================================
-   PAGE SPECIFIC - AUTH
-   ========================================== */
 .auth-container {
     max-width: 440px;
     margin: var(--spacing-2xl) auto;
@@ -1083,9 +1017,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     font-size: var(--font-size-sm);
 }
 
-/* ==========================================
-   UTILITIES
-   ========================================== */
 .text-center {
     text-align: center;
 }
@@ -1178,7 +1109,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     display: none;
 }
 
-/* Empty State */
 .empty-state {
     text-align: center;
     padding: var(--spacing-2xl);
@@ -1201,9 +1131,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     color: var(--text-muted);
 }
 
-/* ==========================================
-   RESPONSIVE
-   ========================================== */
 @media (max-width: 1024px) {
     .footer-grid {
         grid-template-columns: 1fr 1fr;
@@ -1265,9 +1192,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     }
 }
 
-/* ==========================================
-   ANIMATIONS
-   ========================================== */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1298,7 +1222,6 @@ body.dark-mode [style*="border-top: 1px solid #dee2e6"] {
     animation: slideUp 0.4s ease;
 }
 
-/* Loading Spinner */
 .spinner {
     width: 40px;
     height: 40px;

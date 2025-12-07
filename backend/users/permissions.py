@@ -8,7 +8,6 @@ class RolePermissions:
     
     @classmethod
     def setup_roles_and_permissions(cls):
-        # Import inside method to avoid circular import
         from users.models import User  
         from products.models import Product, Category
         from orders.models import Order, OrderItem
@@ -23,8 +22,6 @@ class RolePermissions:
     
     @classmethod
     def _create_customer_role(cls):
-        """Create Customer role with specific permissions"""
-        # Import inside method
         from products.models import Product, Category
         from orders.models import Order
         from reviews.models import Review
@@ -33,29 +30,23 @@ class RolePermissions:
         
         customer_group, created = Group.objects.get_or_create(name='Customers')
         
-        # Permissions for customers
         customer_permissions = [
-            # Product permissions
             ('view_product', Product),
             ('view_category', Category),
             
-            # Order permissions
             ('view_order', Order),
             ('add_order', Order),
             ('change_order', Order), 
             ('delete_order', Order),  
             
-            # Review permissions
             ('view_review', Review),
             ('add_review', Review),
             ('change_review', Review),  
             ('delete_review', Review),  
             
-            # Payment permissions
             ('view_payment', Payment),
             ('add_payment', Payment),
             
-            # Invoice permissions
             ('view_invoice', Invoice),
         ]
         
@@ -70,26 +61,20 @@ class RolePermissions:
         
         vendor_group, created = Group.objects.get_or_create(name='Vendors')
         
-        # Permissions for vendors
         vendor_permissions = [
-            # Product permissions (full CRUD for own products)
             ('add_product', Product),
             ('change_product', Product),
             ('delete_product', Product),
             ('view_product', Product),
             
-            # Category permissions
             ('view_category', Category),
             
-            # Order permissions (view and update status for their products)
             ('view_order', Order),
-            ('change_order', Order),  # For updating order status
+            ('change_order', Order),
             
-            # Shop permissions (manage their own shop)
             ('view_shop', 'shop.Shop'),
             ('change_shop', 'shop.Shop'),
             
-            # Review permissions (view only)
             ('view_review', Review),
         ]
         
@@ -98,7 +83,6 @@ class RolePermissions:
     
     @classmethod
     def _create_admin_role(cls):
-        """Create Admin role with all permissions"""
         admin_group, created = Group.objects.get_or_create(name='Administrators')
         all_permissions = Permission.objects.all()
         admin_group.permissions.set(all_permissions)
@@ -106,11 +90,9 @@ class RolePermissions:
     
     @classmethod
     def _assign_permissions_to_group(cls, group, permission_list):
-        """Assign list of permissions to a group"""
         for perm_codename, model in permission_list:
             try:
                 if isinstance(model, str):
-                    # Handle string format like 'users.Shop'
                     app_label, model_name = model.split('.')
                     content_type = ContentType.objects.get(
                         app_label=app_label, 
@@ -130,7 +112,6 @@ class RolePermissions:
     
     @classmethod
     def get_role_permissions(cls, role_name):
-        """Get permissions for a specific role"""
         try:
             group = Group.objects.get(name=role_name)
             return group.permissions.all()
@@ -139,7 +120,6 @@ class RolePermissions:
     
     @classmethod
     def user_has_permission(cls, user, perm_codename, model=None):
-        """Check if user has specific permission"""
         if user.is_superuser:
             return True
         
@@ -159,9 +139,7 @@ class RolePermissions:
         return user.has_perm(perm_codename)
 
 
-# Custom permission checkers following course patterns
 def can_create_product(user):
-    # Import inside function
     from users.models import User
     return user.is_authenticated and user.role == 'vendor'
 
@@ -175,30 +153,20 @@ def can_edit_product(user, product):
     return False
 
 def can_delete_product(user, product):
-    """
-    Check if user has permission to delete the product
-    Requires two arguments: user and product
-    """
-    # Check if user is authenticated
     if not user.is_authenticated:
         return False
     
-    # Check if user has role attribute
     if not hasattr(user, 'role'):
         return False
     
-    # Admin can delete any product
     if user.role == 'admin':
         return True
     
-    # Vendor can only delete their own products
     if user.role == 'vendor':
-        # Make sure product has a shop and the shop has a user
         if hasattr(product, 'shop') and product.shop and hasattr(product.shop, 'user'):
             return product.shop.user == user
         return False
     
-    # Other roles cannot delete products
     return False
 
 def can_view_order(user, order):
@@ -220,7 +188,6 @@ def can_update_order_status(user, order):
     if user.role == 'admin':
         return True
     if user.role == 'vendor':
-        # Vendors can update status for orders with their products
         return (order.orderitem_set.filter(
             product__shop__user=user
         ).exists() and 
@@ -233,7 +200,6 @@ def can_cancel_order(user, order):
     if user.role == 'admin':
         return True
     if user.role == 'customer':
-        # Customers can only cancel their own pending orders
         return (order.user == user and 
                 order.status in ['cart', 'pending'])
     return False
@@ -242,18 +208,15 @@ def can_create_review(user, product):
     if not user.is_authenticated or user.role != 'customer':
         return False
     
-    # Import inside function
     from orders.models import OrderItem
     from reviews.models import Review
     
-    # Check if user has purchased the product
     has_purchased = OrderItem.objects.filter(
         order__user=user,
         order__status__in=['paid', 'shipped', 'delivered'],
         product=product
     ).exists()
     
-    # Check if user already reviewed
     already_reviewed = Review.objects.filter(
         user=user,
         product=product

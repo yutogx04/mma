@@ -14,7 +14,6 @@ def invoice_detail_view(request, invoice_id):
         'invoice': invoice
     })
 
-# API Views
 @api_view(['POST'])
 @login_required
 def invoice_create_api(request):

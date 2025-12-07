@@ -1,7 +1,4 @@
-﻿/* ==========================================
-   PRODUCT CARD - Professional Styles
-   ========================================== */
-.card-body {
+﻿.card-body {
     padding: var(--spacing-lg);
 }
 
@@ -11,7 +8,6 @@
     background: var(--bg-secondary);
 }
 
-/* Product Card */
 .product-card {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
@@ -101,11 +97,6 @@
     margin-top: var(--spacing-md);
 }
 
-/* ==========================================
-   LAYOUT FIXES
-   ========================================== */
-
-/* Fix footer to take full width of main-wrapper */
 .footer {
     width: 100%;
 }
@@ -115,24 +106,20 @@
     padding: 0 var(--spacing-xl);
 }
 
-/* Fix main-content overflow */
 .main-content {
     overflow-x: hidden;
 }
 
-/* Fix products grid to prevent overflow */
 .products-grid {
     width: 100%;
     overflow: hidden;
 }
 
-/* Ensure product cards don't overflow */
 .product-card {
     max-width: 100%;
     box-sizing: border-box;
 }
 
-/* Fix main-wrapper to prevent horizontal scroll */
 .main-wrapper {
     overflow-x: hidden;
     width: calc(100% - 260px);

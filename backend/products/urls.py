@@ -7,10 +7,8 @@ router.register(r'product', ProductModelViewSet)
 router.register(r'category', CategoryModelViewSet)
 
 urlpatterns = [
-    # API routes (Course 2 - Microservices pattern)
     path('api/', include(router.urls)),
     
-    # Template routes (Course 2 - Form handling pattern)
     path('', product_list, name='product_list'),
     path('create/', create_product_view, name='create_product'),
     path('<int:product_id>/', product_detail, name='product_detail'),

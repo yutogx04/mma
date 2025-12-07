@@ -1,9 +1,6 @@
 import requests
 
 def call_protected_api(request, url):
-    """
-    Call protected API with JWT token - exactly as in course
-    """
     token = request.session.get('access_token')
     headers = {"Authorization": f"Bearer {token}"}
     

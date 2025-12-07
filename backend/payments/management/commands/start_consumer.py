@@ -1,10 +1,3 @@
-"""
-Django management command to start the RabbitMQ consumer
-(Course pattern - payment_service/management/commands/start_consumer.py)
-
-Uses config.py for RabbitMQ IP in multi-server deployment.
-Usage: python manage.py start_consumer
-"""
 from django.core.management.base import BaseCommand
 import pika
 import json

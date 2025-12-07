@@ -3,7 +3,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager, Permission
 
 
 class CompteManager(BaseUserManager):
-    """Custom manager for Compte model"""
     
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -22,10 +21,6 @@ class CompteManager(BaseUserManager):
 
 
 class Compte(AbstractUser):
-    """
-    Custom user model following course pattern
-    Uses email as unique identifier, with role-based access
-    """
     ROLE_CHOICES = [
         ('customer', 'Customer'),
         ('vendor', 'Vendor'),
@@ -66,11 +61,9 @@ class Compte(AbstractUser):
         return can_delete_product(self, product)
     
     def get_shop(self):
-        """Get user's shop if they are a vendor"""
         if self.is_vendor():
             return self.shop_set.first()
         return None
 
 
-# Alias for backward compatibility
 User = Compte

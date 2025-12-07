@@ -10,13 +10,11 @@ from orders.models import Order
 
 @login_required
 def payment_create_view(request, order_id):
-    """Template view for payment - handles both GET and POST"""
     order = get_object_or_404(Order, id=order_id, user=request.user)
     
     if request.method == "POST":
         payment_method = request.POST.get("payment_method", "credit_card")
         
-        # Create payment directly (no internal API call needed)
         payment = Payment.objects.create(
             order=order,
             amount=order.total_amount,
@@ -24,15 +22,12 @@ def payment_create_view(request, order_id):
             status='pending'
         )
         
-        # Simulate payment processing (always succeeds in simulation)
         payment.status = 'succeeded'
         payment.save()
         
-        # Update order status
         order.status = 'paid'
         order.save()
         
-        # Reduce stock for each item
         for item in order.orderitem_set.all():
             if item.product.stock_quantity >= item.quantity:
                 item.product.stock_quantity -= item.quantity
@@ -44,7 +39,6 @@ def payment_create_view(request, order_id):
     return render(request, "payments/create.html", {'order': order})
 
 
-# API Views
 @api_view(['POST'])
 @login_required
 def payment_create_api(request):
@@ -60,11 +54,9 @@ def payment_create_api(request):
         status='pending'
     )
     
-    # Simulate payment processing
     payment.status = 'succeeded'
     payment.save()
     
-    # Update order status
     order.status = 'paid'
     order.save()
     

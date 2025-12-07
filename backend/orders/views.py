@@ -4,25 +4,21 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, viewsets, permissions
+from rest_framework.authentication import SessionAuthentication
 import pika
 import json
 from config import RABBITMQ_HOST
 from .models import Order, OrderItem
-from .serializers import OrderSerializer
+from .serializers import OrderSerializer, OrderItemSerializer
 from products.models import Product
 from django.db.models import Sum, Count
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 
 
-# ===========================================
-# TEMPLATE VIEWS
-# ===========================================
-
 @require_http_methods(["GET"])
 @login_required
 def order_list(request):
-    """GET: Display user's orders"""
     status_filter = request.GET.get('status', '')
     
     if request.user.role == 'customer':
@@ -42,7 +38,6 @@ def order_list(request):
 @require_http_methods(["GET", "POST"])
 @login_required
 def order_detail(request, order_id):
-    """GET: Show order, POST: Update/Cancel order"""
     if request.user.role == 'customer':
         order = get_object_or_404(Order, id=order_id, user=request.user)
     elif request.user.role == 'vendor':
@@ -74,7 +69,6 @@ def order_detail(request, order_id):
 @require_http_methods(["GET", "POST"])
 @login_required
 def cart_view(request):
-    """GET: Show cart, POST: Various cart actions"""
     cart = Order.objects.filter(user=request.user, status='cart').first()
     
     if request.method == 'POST':
@@ -88,7 +82,6 @@ def cart_view(request):
             if quantity > 0:
                 cart_item.quantity = quantity
                 cart_item.save()
-                # Update cart total
                 if cart:
                     cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
                     cart.save()
@@ -99,7 +92,6 @@ def cart_view(request):
             item_id = request.POST.get("item_id")
             cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
             cart_item.delete()
-            # Update cart total
             if cart:
                 cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
                 cart.save()
@@ -114,7 +106,6 @@ def cart_view(request):
             cart.status = 'pending'
             cart.save()
             
-            # Publish message to RabbitMQ
             message = {
                 "order_id": cart.id,
                 "user_id": request.user.id,
@@ -145,14 +136,12 @@ def cart_view(request):
                 messages.success(request, "Panier vidé")
             return redirect('cart_view')
     
-    # GET - Show cart
     return render(request, "orders/cart.html", {'cart': cart})
 
 
 @require_http_methods(["POST"])
 @login_required
 def add_to_cart_view(request):
-    """Add item to cart from product page"""
     product_id = request.POST.get("product_id")
     quantity = int(request.POST.get("quantity", 1))
     
@@ -166,14 +155,12 @@ def add_to_cart_view(request):
         messages.error(request, f"Stock insuffisant. Disponible: {product.stock_quantity}")
         return redirect('product_detail', product_id=product_id)
     
-    # Get or create cart
     cart, created = Order.objects.get_or_create(
         user=request.user,
         status='cart',
         defaults={'total_amount': 0}
     )
     
-    # Add or update item
     order_item, item_created = OrderItem.objects.get_or_create(
         order=cart,
         product=product,
@@ -184,17 +171,12 @@ def add_to_cart_view(request):
         order_item.quantity += quantity
         order_item.save()
     
-    # Update cart total
     cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
     cart.save()
     
     messages.success(request, f"{product.name} ajouté au panier")
     return redirect('cart_view')
 
-
-# ===========================================
-# API VIEWS
-# ===========================================
 
 @api_view(['GET'])
 @login_required
@@ -412,14 +394,11 @@ def cart_api(request):
     return Response(data)
 
 
-# ===========================================
-# VIEWSET (Course Pattern)
-# ===========================================
-
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [SessionAuthentication]
     
     def get_queryset(self):
         user = self.request.user
@@ -428,3 +407,34 @@ class OrderViewSet(viewsets.ModelViewSet):
         elif user.role == 'vendor':
             return Order.objects.filter(orderitem__product__shop__user=user).distinct()
         return Order.objects.all()
+
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [SessionAuthentication]
+    
+    def get_queryset(self):
+        return OrderItem.objects.filter(
+            order__user=self.request.user,
+            order__status='cart'
+        )
+    
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        cart = instance.order
+        cart.total_amount = sum(
+            item.quantity * item.price 
+            for item in cart.orderitem_set.all()
+        )
+        cart.save()
+    
+    def perform_destroy(self, instance):
+        cart = instance.order
+        instance.delete()
+        cart.total_amount = sum(
+            item.quantity * item.price 
+            for item in cart.orderitem_set.all()
+        )
+        cart.save()

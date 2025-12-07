@@ -9,19 +9,16 @@ from products.models import Product
 
 @login_required
 def review_create_view(request, product_id):
-    """Create a review for a product"""
     product = get_object_or_404(Product, id=product_id)
     
     if request.method == "POST":
         rating = request.POST.get("rating")
         comment = request.POST.get("comment")
         
-        # Check if user already reviewed this product
         if Review.objects.filter(user=request.user, product=product).exists():
             messages.error(request, "Vous avez déjà évalué ce produit")
             return redirect('product_detail', product_id=product_id)
         
-        # Create review
         Review.objects.create(
             user=request.user,
             product=product,
@@ -36,11 +33,9 @@ def review_create_view(request, product_id):
         'product': product
     })
 
-# API Views
 @api_view(['POST'])
 @login_required
 def review_create_api(request):
-    """API endpoint to create a review"""
     product_id = request.data.get('product_id')
     rating = request.data.get('rating')
     comment = request.data.get('comment')
@@ -68,7 +63,6 @@ def review_create_api(request):
 @api_view(['DELETE'])
 @login_required
 def review_delete_api(request, review_id):
-    """API endpoint to delete a review"""
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
     
@@ -79,7 +73,6 @@ def review_delete_api(request, review_id):
 
 @api_view(['GET'])
 def product_reviews_api(request, product_id):
-    """API endpoint to get reviews for a product"""
     product = get_object_or_404(Product, id=product_id)
     reviews = Review.objects.filter(product=product)
     

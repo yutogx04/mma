@@ -18,10 +18,8 @@ from orders.models import Order, OrderItem
 from .serializers import ProductSerializer, CategorySerializer
 
 
-# Template Views (Course 2 pattern)
 @require_http_methods(["GET"])
 def product_list(request):
-    """GET: Display all products"""
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     
@@ -40,11 +38,9 @@ def product_list(request):
         'selected_category': category_id,
     })
 
-# PRODUCT CREATE - GET/POST (Course 2 - Form handling)
 @require_http_methods(["GET", "POST"])
 @login_required
 def create_product_view(request):
-    """GET: Show form, POST: Create product"""
     if not (request.user.role == 'vendor' or request.user.role == 'admin'):
         return HttpResponseForbidden("Permission denied")
     
@@ -76,11 +72,9 @@ def create_product_view(request):
         'categories': categories
     })
 
-# PRODUCT UPDATE - GET/PUT (Course 2 - Form handling)
 @require_http_methods(["GET", "POST"])
 @login_required
 def update_product_view(request, product_id):
-    """GET: Show form, POST/PUT: Update product"""
     product = get_object_or_404(Product, id=product_id)
     
     if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
@@ -103,11 +97,9 @@ def update_product_view(request, product_id):
         'categories': categories 
     })
 
-# PRODUCT DELETE - DELETE/POST (Course 2 - Form handling)
 @require_http_methods(["GET", "POST", "DELETE"])
 @login_required
 def delete_product_view(request, product_id):
-    """GET: Confirm, POST/DELETE: Delete product"""
     product = get_object_or_404(Product, id=product_id)
     
     if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
@@ -127,10 +119,8 @@ def delete_product_view(request, product_id):
         'product': product
     })
 
-# PRODUCT DETAIL - GET/POST
 @require_http_methods(["GET", "POST"])
 def product_detail(request, product_id):
-    """GET: Show product, POST: Add to cart"""
     product = get_object_or_404(Product, id=product_id)
     
     if request.method == 'POST':
@@ -162,11 +152,9 @@ def product_detail(request, product_id):
         'product': product
     })
 
-# Vendor products view
 @require_http_methods(["GET"])
 @login_required
 def vendor_products_view(request):
-    """GET: Show vendor's products"""
     if request.user.role != 'vendor':
         return HttpResponseForbidden("Access réservé aux vendeurs")
     
@@ -190,7 +178,6 @@ def vendor_products_view(request):
 
 @require_http_methods(["POST"])
 def add_to_cart_view(request):
-    """Dedicated view for adding items to cart"""
     product_id = request.POST.get("product_id")
     quantity = int(request.POST.get("quantity", 1))
     
@@ -233,11 +220,13 @@ def add_to_cart_view(request):
     return redirect('cart_view')
 
 
-# ModelViewSets (Course 2 - REST pattern)
+from rest_framework.authentication import SessionAuthentication
+
 class ProductModelViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication]
     
     def perform_create(self, serializer):
         if self.request.user.role == 'vendor':
@@ -250,3 +239,4 @@ class CategoryModelViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication]

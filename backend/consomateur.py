@@ -1,10 +1,3 @@
-"""
-RabbitMQ Consumer - Standalone Script
-(Course pattern - consomateur.py from bib folder)
-
-Uses config.py for RabbitMQ IP in multi-server deployment.
-Run with: python consomateur.py
-"""
 import pika
 import requests
 import json
@@ -12,14 +5,12 @@ from config import RABBITMQ_HOST, DJANGO_HOST, DJANGO_PORT
 
 
 def process_payment(ch, method, properties, body):
-    """Process payment message from queue"""
     payment_data = json.loads(body.decode())
     print(f"Paiement reçu: {payment_data}")
     
     order_id = payment_data.get('order_id')
     amount = payment_data.get('amount')
     
-    # Call payment API to process
     try:
         res = requests.post(
             f"http://{DJANGO_HOST}:{DJANGO_PORT}/api/payments/",
@@ -37,7 +28,6 @@ def process_payment(ch, method, properties, body):
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
 
-# Main consumer loop
 print(f"Connexion à RabbitMQ: {RABBITMQ_HOST}")
 with pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST)) as con:
     ch = con.channel()

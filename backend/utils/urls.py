@@ -1,7 +1,3 @@
-"""
-Utils App URLs
-Health Check route for Consul
-"""
 from django.urls import path
 from . import views
 
