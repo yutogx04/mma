@@ -7,9 +7,7 @@ So in here i'm gonna try and explain how to deploy the WAMS project across the m
 
 ## Step 1: Configure IP Addresses
 
-So in we're gonna edit `backend/config.py` with the machine IPs we're gonna use:
-
-# Example IPs - Replace with our actual IP's but since we're only three people, one will have to start two inside his
+Edit `backend/config.py` with your machine IPs:
 
 DJANGO_HOST = "192.168.1.10"
 DJANGO_PORT = 8000
@@ -140,3 +138,4 @@ cd backend
 python manage.py runserver 0.0.0.0:8000
 
 Get phone IP: Settings → WiFi → Your network → IP address
+
