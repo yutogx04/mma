@@ -1,8 +1,6 @@
 # Docker Compose - Multi-Server Deployment (Constraint 2.7)
 # Architecture: front, auth, api, worker, broker, discovery, proxy
 
-version: '3.8'
-
 services:
   # Reverse Proxy / Load Balancer (Constraint 2.6)
   traefik:
@@ -41,6 +39,7 @@ services:
 
   # Django Backend - REST API + Auth (Constraints 2.1, 2.2)
   django:
+    image: mma-backend:latest
     build: ./backend
     ports:
       - "8000:8000"
@@ -60,6 +59,7 @@ services:
 
   # Payment Worker - RabbitMQ Consumer
   payment-worker:
+    image: mma-backend:latest
     build: ./backend
     command: python manage.py start_consumer
     environment:

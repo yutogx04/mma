@@ -6,12 +6,7 @@ class UtilsConfig(AppConfig):
     name = 'utils'
     
     def ready(self):
-        """
-        Register service with Consul on Django startup
-        (Course pattern - auto-registration)
-        """
         import os
-        # Only register in main process, not in autoreload
         if os.environ.get('RUN_MAIN') == 'true':
             try:
                 from config import DJANGO_HOST, DJANGO_PORT

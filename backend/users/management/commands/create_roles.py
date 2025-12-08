@@ -1,7 +1,3 @@
-"""
-Management command to create roles and permissions
-Usage: python manage.py create_roles
-"""
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -22,7 +18,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Roles created successfully!'))
 
     def _create_customer_role(self):
-        """Create Customer role with specific permissions"""
         from products.models import Product, Category
         from orders.models import Order
         from reviews.models import Review
@@ -51,7 +46,6 @@ class Command(BaseCommand):
         self.stdout.write(f'  ✓ Customer role {"created" if created else "updated"}')
 
     def _create_vendor_role(self):
-        """Create Vendor role with product management permissions"""
         from products.models import Product, Category
         from orders.models import Order
         from reviews.models import Review
@@ -75,13 +69,11 @@ class Command(BaseCommand):
         self.stdout.write(f'  ✓ Vendor role {"created" if created else "updated"}')
 
     def _create_admin_role(self):
-        """Create Admin role with all permissions"""
         admin_group, created = Group.objects.get_or_create(name='Administrators')
         admin_group.permissions.set(Permission.objects.all())
         self.stdout.write(f'  ✓ Admin role {"created" if created else "updated"}')
 
     def _assign_permissions(self, group, permission_list):
-        """Assign list of permissions to a group"""
         for perm_codename, model in permission_list:
             try:
                 if isinstance(model, str):

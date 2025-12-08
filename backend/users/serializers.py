@@ -6,4 +6,4 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ["password"]  # on renvoie tout SAUF le password (Course 1 pattern)
+        exclude = ["password"]  
