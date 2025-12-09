@@ -17,7 +17,14 @@ class UtilsConfig(AppConfig):
                     address=DJANGO_HOST,
                     port=DJANGO_PORT,
                     health_path="/health/",
-                    interval="10s"
+                    interval="10s",
+                    # Tags Traefik compatible Course 1
+                    tags=[
+                        "traefik.enable=true",
+                        "traefik.http.routers.django.rule=PathPrefix(`/`)",
+                        "traefik.http.routers.django.entrypoints=web,websecure",
+                        # "traefik.http.routers.django.tls.certresolver=letsencrypt" # Uncomment for Prod
+                    ]
                 )
             except Exception as e:
                 print(f"[Consul] Erreur au démarrage: {e}")

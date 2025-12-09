@@ -37,7 +37,8 @@ def register_django(
     address: str,
     port: int,
     health_path: str = "/health/",
-    interval: str = "10s"
+    interval: str = "10s",
+    tags: list = None
 ):
     """
     Enregistrement d'un service Django via requests API
@@ -50,6 +51,7 @@ def register_django(
             "Address": address,
             "Port": port,
             "Check": {"HTTP": check_url, "Interval": interval},
+            "Tags": tags or []
         }
         requests.put(
             f"http://{CONSUL_HOST}:{CONSUL_PORT}/v1/agent/service/register",
