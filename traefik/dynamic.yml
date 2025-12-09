@@ -1,26 +1,3 @@
-# Traefik Dynamic Configuration
-# Routing and Load Balancing
-
 http:
-  routers:
-    django-router:
-      rule: "PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/health`)"
-      service: django-service
-      entryPoints:
-        - web
-
-    frontend-router:
-      rule: "PathPrefix(`/`)"
-      service: django-service
-      entryPoints:
-        - web
-
-  services:
-    django-service:
-      loadBalancer:
-        servers:
-          - url: "http://django:8000"
-        healthCheck:
-          path: /health/
-          interval: "10s"
-          timeout: "3s"
+  routers: {}
+  services: {}
