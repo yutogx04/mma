@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Produits - E-Commerce{% endblock %}
 
@@ -6,10 +6,10 @@
 <div class="products-page animate-slide-up">
     <!-- Page Header -->
     <div class="page-header">
-        <h1 class="page-title">📦 Tous les Produits</h1>
+        <h1 class="page-title">Tous les Produits</h1>
         {% if perms.products.add_product %}
         <a href="{% url 'create_product' %}" class="btn btn-success">
-            ➕ Ajouter un Produit
+            Ajouter un Produit
         </a>
         {% endif %}
     </div>
@@ -19,15 +19,15 @@
         <form method="get" action="{% url 'product_list' %}">
             <div class="filters-grid">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">🔍 Rechercher</label>
+                    <label class="form-label">Rechercher</label>
                     <input type="text" name="search" value="{{ search_query }}" placeholder="Nom du produit..."
                         class="form-control">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">📁 Catégorie</label>
+                    <label class="form-label">CatÃ©gorie</label>
                     <select name="category" class="form-control">
-                        <option value="">Toutes les catégories</option>
+                        <option value="">Toutes les catÃ©gories</option>
                         {% for category in categories %}
                         <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
                             {{ category.name }}
@@ -38,10 +38,10 @@
 
                 <div class="flex gap-2" style="align-self: end;">
                     <button type="submit" class="btn btn-primary">
-                        🔍 Filtrer
+                        Filtrer
                     </button>
                     <a href="{% url 'product_list' %}" class="btn btn-secondary">
-                        🔄 Reset
+                        Reset
                     </a>
                 </div>
             </div>
@@ -53,7 +53,7 @@
         {% for product in products %}
         <div class="product-card">
             <div class="product-card-image">
-                📦
+
             </div>
 
             <div class="product-card-body">
@@ -68,21 +68,21 @@
                 </div>
 
                 <div class="product-card-meta">
-                    <span>🏪 {{ product.shop.name }}</span>
-                    <span>📁 {{ product.category.name }}</span>
+                    <span>ðŸª {{ product.shop.name }}</span>
+                    <span>ðŸ“ {{ product.category.name }}</span>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="product-card-actions">
                     <a href="{% url 'product_detail' product.id %}" class="btn btn-primary btn-sm" style="flex: 1;">
-                        👀 Voir
+                        Voir
                     </a>
 
                     {% if user.role == 'customer' %}
                     <form method="post" action="{% url 'product_detail' product.id %}" style="flex: 1;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success btn-sm w-full">
-                            🛒 Ajouter
+                            Ajouter
                         </button>
                     </form>
                     {% endif %}
@@ -91,7 +91,7 @@
                     <div class="flex gap-1">
                         {% if perms.products.change_product and product.shop.user == user or user.role == 'admin' %}
                         <a href="{% url 'update_product' product.id %}" class="btn btn-warning btn-icon">
-                            ✏️
+                            âœ
                         </a>
                         {% endif %}
 
@@ -100,7 +100,7 @@
                             data-confirm="Supprimer '{{ product.name }}'?">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-icon">
-                                🗑️
+                                Ã—
                             </button>
                         </form>
                         {% endif %}
@@ -111,9 +111,9 @@
         </div>
         {% empty %}
         <div class="empty-state" style="grid-column: 1 / -1;">
-            <div class="empty-state-icon">😔</div>
-            <h3>Aucun produit trouvé</h3>
-            <p>Essayez de modifier vos critères de recherche ou ajoutez de nouveaux produits.</p>
+            <div class="empty-state-icon"></div>
+            <h3>Aucun produit trouvÃ©</h3>
+            <p>Essayez de modifier vos critÃ¨res de recherche ou ajoutez de nouveaux produits.</p>
         </div>
         {% endfor %}
     </div>
@@ -122,7 +122,7 @@
     {% if perms.products.add_product %}
     <div class="card mt-4">
         <div class="card-header">
-            <h3 style="margin: 0;">🚀 Ajout Rapide de Produit</h3>
+            <h3 style="margin: 0;">Ajout Rapide de Produit</h3>
         </div>
         <div class="card-body">
             <form method="post" action="{% url 'create_product' %}">
@@ -144,7 +144,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">Catégorie</label>
+                        <label class="form-label">CatÃ©gorie</label>
                         <select name="category_id" required class="form-control">
                             <option value="">Choisir...</option>
                             {% for category in categories %}
@@ -154,7 +154,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-success">
-                        ➕ Créer
+                        CrÃ©er
                     </button>
                 </div>
 

@@ -12,6 +12,8 @@ CONSUL_PORT = int(os.getenv("CONSUL_PORT", "8500"))
 TRAEFIK_HOST = os.getenv("TRAEFIK_HOST", "localhost")
 TRAEFIK_PORT = int(os.getenv("TRAEFIK_PORT", "80"))
 
+SERVICE_NAME = os.getenv("SERVICE_NAME", "django-service")
+
 
 def get_rabbitmq_url():
     return f"{RABBITMQ_HOST}"

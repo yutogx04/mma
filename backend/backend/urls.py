@@ -7,6 +7,7 @@ from users import views as user_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     
+    path('health/', include('utils.urls')),
     path('', include('utils.urls')),
     
     path('', RedirectView.as_view(url='/dashboard/', permanent=False)),
@@ -16,6 +17,7 @@ urlpatterns = [
     path('api/shops/', include('shop.urls')),
     path('api/orders/', include('orders.urls')),
     path('api/payments/', include('payments.urls')),
+    path('vendor/', include('vendor.urls')),  # Vendor marketplace URLs
     path('api/invoices/', include('invoices.urls')),
     path('api/reviews/', include('reviews.urls')),
     

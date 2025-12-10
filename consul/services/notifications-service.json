@@ -1,0 +1,17 @@
+{
+    "service": {
+        "name": "notifications-service",
+        "address": "127.0.0.1",
+        "port": 8000,
+        "tags": [
+            "traefik.enable=true",
+            "traefik.http.routers.notifications-get.rule=Method('GET') && PathPrefix('/api/notifications')",
+            "traefik.http.routers.notifications-post.rule=Method('POST') && PathPrefix('/api/notifications')",
+            "traefik.http.services.notifications-service.loadbalancer.server.port=8000"
+        ],
+        "check": {
+            "http": "http://127.0.0.1:8000/health/",
+            "interval": "10s"
+        }
+    }
+}

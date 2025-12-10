@@ -40,14 +40,33 @@ def login_view(request):
     
     return render(request, "registration/login.html", {'form': form})
 
+from payments.models import PaymentMethod
+import uuid
+
 @require_http_methods(["GET", "POST"])
 def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            user.role = 'customer'  # Hardcode customer role
+            user.save()
+            
+            # Save Payment Method
+            card_number = form.cleaned_data['card_number']
+            PaymentMethod.objects.create(
+                user=user,
+                card_type=form.cleaned_data['card_type'],
+                card_last_four=card_number[-4:],
+                card_holder_name=form.cleaned_data['card_holder'],
+                expiry_month=form.cleaned_data['expiry_month'],
+                expiry_year=form.cleaned_data['expiry_year'],
+                payment_token=str(uuid.uuid4()),
+                is_default=True
+            )
+            
             login(request, user)
-            messages.success(request, "Compte créé avec succès!")
+            messages.success(request, "Compte créé avec succès et moyen de paiement enregistré!")
             return redirect('dashboard')
     else:
         form = UserRegistrationForm()
@@ -75,24 +94,25 @@ def dashboard_view(request):
         'last_name': request.user.last_name
     }
     
+    
+    # Recent orders - no permission check needed
     recent_orders = []
-    if request.user.has_perm('orders.view_order'):
-        thirty_days_ago = timezone.now() - timedelta(days=30)
-        
-        if request.user.role == 'customer':
-            recent_orders = Order.objects.filter(
-                user=request.user, 
-                created_at__gte=thirty_days_ago
-            ).order_by('-created_at')[:5]
-        elif request.user.role == 'vendor':
-            recent_orders = Order.objects.filter(
-                orderitem__product__shop__user=request.user,
-                created_at__gte=thirty_days_ago
-            ).distinct().order_by('-created_at')[:5]
-        elif request.user.role == 'admin':
-            recent_orders = Order.objects.filter(
-                created_at__gte=thirty_days_ago
-            ).order_by('-created_at')[:5]
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    
+    if request.user.role == 'customer':
+        recent_orders = Order.objects.filter(
+            user=request.user, 
+            created_at__gte=thirty_days_ago
+        ).exclude(status='cart').order_by('-created_at')[:5]
+    elif request.user.role == 'vendor':
+        recent_orders = Order.objects.filter(
+            orderitem__product__shop__user=request.user,
+            created_at__gte=thirty_days_ago
+        ).exclude(status='cart').distinct().order_by('-created_at')[:5]
+    elif request.user.role == 'admin':
+        recent_orders = Order.objects.filter(
+            created_at__gte=thirty_days_ago
+        ).exclude(status='cart').order_by('-created_at')[:5]
     
     popular_products = Product.objects.annotate(
         order_count=Count('orderitem')
@@ -126,7 +146,15 @@ def dashboard_view(request):
         'total_products': total_products,
         'low_stock_products': low_stock_products,
         'out_of_stock_products': out_of_stock_products,
+        'notifications': request.user.notifications.all()[:5]
     }
+    
+    # Add cart items count
+    cart = Order.objects.filter(user=request.user, status='cart').first()
+    if cart:
+        context['cart_items'] = cart.orderitem_set.count()
+    else:
+        context['cart_items'] = 0
     
     return render(request, "dashboard.html", context)
 
@@ -170,7 +198,22 @@ def vendor_register_view(request):
                 description=shop_description
             )
             
+            # Payment Method for Vendor
+            card_number = request.POST.get('card_number', '0000')
+            card_type = request.POST.get('card_type', 'credit_card')
+            PaymentMethod.objects.create(
+                user=user,
+                card_type=card_type,
+                card_last_four=card_number[-4:],
+                card_holder_name=request.POST.get('card_holder', 'Unknown'),
+                expiry_month=request.POST.get('expiry_month', 12),
+                expiry_year=request.POST.get('expiry_year', 2025),
+                payment_token=str(uuid.uuid4()),
+                is_default=True
+            )
+            
             login(request, user)
+            messages.success(request, "Compte vendeur créé avec succès!")
             return redirect('dashboard')
             
         except Exception as e:

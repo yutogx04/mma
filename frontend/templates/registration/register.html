@@ -6,7 +6,7 @@
 <div class="auth-container animate-slide-up" style="max-width: 500px;">
     <div class="auth-card">
         <div class="auth-header">
-            <h1>📝 Créer un compte</h1>
+            <h1>Créer un compte</h1>
             <p>Rejoignez notre communauté</p>
         </div>
 
@@ -69,21 +69,60 @@
                 </div>
             </div>
 
+            <!-- Payment Information -->
+            <div class="auth-header"
+                style="margin-top: 1.5rem; margin-bottom: 1rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                <h3 style="font-size: 1.25rem;">Moyen de Paiement</h3>
+            </div>
+
             <div class="form-group">
-                <label for="id_role" class="form-label">Type de compte</label>
-                <select name="role" id="id_role" required class="form-control">
-                    <option value="customer" {% if form.role.value=='customer' %}selected{% endif %}>👤 Client</option>
-                    <option value="vendor" {% if form.role.value=='vendor' %}selected{% endif %}>🏪 Vendeur</option>
+                <label for="id_card_type" class="form-label">Type de paiement</label>
+                <select name="card_type" id="id_card_type" required class="form-control">
+                    <option value="credit_card">Carte de Crédit</option>
+                    <option value="debit_card">Carte de Débit</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="bank_transfer">Virement Bancaire</option>
                 </select>
-                {% if form.role.errors %}
-                <div class="text-danger" style="font-size: 0.875rem; margin-top: 0.5rem;">
-                    {% for error in form.role.errors %}{{ error }}{% endfor %}
-                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_card_holder" class="form-label">Titulaire de la carte</label>
+                <input type="text" name="card_holder" id="id_card_holder" required class="form-control"
+                    placeholder="Nom sur la carte" value="{{ form.card_holder.value|default:'' }}">
+                {% if form.card_holder.errors %}
+                <div class="text-danger">{% for error in form.card_holder.errors %}{{ error }}{% endfor %}</div>
                 {% endif %}
             </div>
 
+            <div class="form-group">
+                <label for="id_card_number" class="form-label">Numéro de carte</label>
+                <input type="text" name="card_number" id="id_card_number" required class="form-control"
+                    placeholder="0000 0000 0000 0000" maxlength="16" value="{{ form.card_number.value|default:'' }}">
+                {% if form.card_number.errors %}
+                <div class="text-danger">{% for error in form.card_number.errors %}{{ error }}{% endfor %}</div>
+                {% endif %}
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label for="id_expiry_month" class="form-label">Mois (MM)</label>
+                    <input type="number" name="expiry_month" id="id_expiry_month" required class="form-control"
+                        placeholder="MM" min="1" max="12" value="{{ form.expiry_month.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_expiry_year" class="form-label">Année (YYYY)</label>
+                    <input type="number" name="expiry_year" id="id_expiry_year" required class="form-control"
+                        placeholder="YYYY" min="2024" value="{{ form.expiry_year.value|default:'' }}">
+                </div>
+                <div class="form-group">
+                    <label for="id_cvv" class="form-label">CVV</label>
+                    <input type="text" name="cvv" id="id_cvv" required class="form-control" placeholder="123"
+                        maxlength="3">
+                </div>
+            </div>
+
             <button type="submit" class="btn btn-success btn-lg w-full">
-                ✅ Créer mon compte
+                Créer mon compte
             </button>
         </form>
 

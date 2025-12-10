@@ -3,52 +3,107 @@
 {% block title %}Inscription Vendeur - E-Commerce{% endblock %}
 
 {% block content %}
-<div class="auth-container" style="max-width: 600px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-    <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">🏪 Devenir Vendeur</h2>
-    
+<div class="auth-container"
+    style="max-width: 600px; margin: 3rem auto; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">Devenir Vendeur</h2>
+
     <form method="post">
         {% csrf_token %}
-        
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
             <div>
-                <label for="id_username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom d'utilisateur:</label>
-                <input type="text" name="username" id="id_username" required 
-                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                <label for="id_username" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom
+                    d'utilisateur:</label>
+                <input type="text" name="username" id="id_username" required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
             </div>
-            
+
             <div>
                 <label for="id_email" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Email:</label>
-                <input type="email" name="email" id="id_email" required 
-                       style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+                <input type="email" name="email" id="id_email" required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
             </div>
         </div>
-        
+
         <div style="margin-bottom: 1.5rem;">
-            <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Mot de passe:</label>
-            <input type="password" name="password" id="id_password" required 
-                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+            <label for="id_password" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Mot de
+                passe:</label>
+            <input type="password" name="password" id="id_password" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
         </div>
-        
+
         <div style="margin-bottom: 1.5rem;">
-            <label for="id_shop_name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom du magasin:</label>
-            <input type="text" name="shop_name" id="id_shop_name" required 
-                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+            <label for="id_shop_name" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Nom du
+                magasin:</label>
+            <input type="text" name="shop_name" id="id_shop_name" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
         </div>
-        
+
         <div style="margin-bottom: 2rem;">
-            <label for="id_shop_description" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Description du magasin:</label>
-            <textarea name="shop_description" id="id_shop_description" required 
-                      style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; height: 100px; resize: vertical;"></textarea>
+            <label for="id_shop_description"
+                style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Description du magasin:</label>
+            <textarea name="shop_description" id="id_shop_description" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; height: 100px; resize: vertical;"></textarea>
+        </div>
+
+        <!-- Payment Info -->
+        <h3 style="margin-bottom: 1rem; color: #333;">Moyen de Paiement</h3>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="id_card_type" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Type de
+                paiement:</label>
+            <select name="card_type" id="id_card_type" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+                <option value="credit_card">Carte de Crédit</option>
+                <option value="debit_card">Carte de Débit</option>
+                <option value="paypal">PayPal</option>
+                <option value="bank_transfer">Virement Bancaire</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="id_card_holder" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Titulaire de
+                la carte:</label>
+            <input type="text" name="card_holder" id="id_card_holder" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="id_card_number" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Numéro de
+                carte (16 chiffres):</label>
+            <input type="text" name="card_number" id="id_card_number" maxlength="16" required
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+            <div>
+                <label for="id_expiry_month"
+                    style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Mois:</label>
+                <input type="number" name="expiry_month" id="id_expiry_month" min="1" max="12" required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div>
+                <label for="id_expiry_year"
+                    style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Année:</label>
+                <input type="number" name="expiry_year" id="id_expiry_year" min="2024" required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+            <div>
+                <label for="id_cvv" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">CVV:</label>
+                <input type="text" name="cvv" id="id_cvv" maxlength="3" required
+                    style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
         </div>
 
         <button type="submit" class="btn btn-warning" style="width: 100%; padding: 0.75rem; font-size: 1.1rem;">
-            🏪 Devenir Vendeur
+            Devenir Vendeur
         </button>
     </form>
 
     <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
         <p style="color: #666;">
-            <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none;">← Retour à l'inscription standard</a>
+            <a href="{% url 'register' %}" style="color: #007bff; text-decoration: none;">← Retour à l'inscription
+                standard</a>
         </p>
     </div>
 </div>

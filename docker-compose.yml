@@ -7,10 +7,12 @@ services:
     image: traefik:v2.10
     ports:
       - "80:80"
+      - "443:443" # HTTPS
       - "8080:8080" # Dashboard
     volumes:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik/acme.json:/etc/traefik/acme.json
     depends_on:
       - consul
     networks:
@@ -37,23 +39,187 @@ services:
     networks:
       - mma-network
 
-  # Django Backend - REST API + Auth (Constraints 2.1, 2.2)
-  django:
+  # Users Service (Users & Authentication + Token Services)
+  users-service:
     image: mma-backend:latest
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       - SECRET_KEY=your-secret-key-here
       - DEBUG=True
       - RABBITMQ_HOST=rabbitmq
       - CONSUL_HOST=consul
+      - DJANGO_HOST=users-service
+      - SERVICE_NAME=users-service
     depends_on:
       - rabbitmq
       - consul
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.django.rule=PathPrefix(`/`)"
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Products Service
+  products-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8002:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=products-service
+      - SERVICE_NAME=products-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Orders Service
+  orders-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8003:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=orders-service
+      - SERVICE_NAME=orders-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Payment Service (Payments API)
+  payments-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8004:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=payments-service
+      - SERVICE_NAME=payments-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Review Service (Product Reviews)
+  reviews-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8005:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=reviews-service
+      - SERVICE_NAME=reviews-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Invoices Service
+  invoices-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8006:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=invoices-service
+      - SERVICE_NAME=invoices-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Shop Service (Admin, Static, Dashboard, Root)
+  shop-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8007:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=shop-service
+      - SERVICE_NAME=shop-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Notifications Service (API + Worker)
+  notifications-service:
+    image: mma-backend:latest
+    build: ./backend
+    ports:
+      - "8008:8000"
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - DEBUG=True
+      - RABBITMQ_HOST=rabbitmq
+      - CONSUL_HOST=consul
+      - DJANGO_HOST=notifications-service
+      - SERVICE_NAME=notifications-service
+    depends_on:
+      - rabbitmq
+      - consul
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
+    networks:
+      - mma-network
+
+  # Notification Worker (Separate Consumer)
+  notification-worker:
+    image: mma-backend:latest
+    build: ./backend
+    command: python manage.py start_notification_consumer
+    environment:
+      - SECRET_KEY=your-secret-key-here
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+      - notifications-service
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
     networks:
       - mma-network
 
@@ -67,7 +233,9 @@ services:
       - RABBITMQ_HOST=rabbitmq
     depends_on:
       - rabbitmq
-      - django
+      - payments-service
+    volumes:
+      - ./backend/db.sqlite3:/app/db.sqlite3
     networks:
       - mma-network
 

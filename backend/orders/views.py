@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, viewsets, permissions
@@ -8,10 +8,11 @@ from rest_framework.authentication import SessionAuthentication
 import pika
 import json
 from config import RABBITMQ_HOST
-from .models import Order, OrderItem
+from .models import Order, OrderItem, VendorOrder
 from .serializers import OrderSerializer, OrderItemSerializer
 from products.models import Product
 from django.db.models import Sum, Count
+from decimal import Decimal
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 
@@ -41,7 +42,13 @@ def order_detail(request, order_id):
     if request.user.role == 'customer':
         order = get_object_or_404(Order, id=order_id, user=request.user)
     elif request.user.role == 'vendor':
-        order = get_object_or_404(Order, id=order_id, orderitem__product__shop__user=request.user)
+        # Use filter + first to avoid MultipleObjectsReturned when order has multiple items from vendor
+        order = Order.objects.filter(
+            id=order_id,
+            orderitem__product__shop__user=request.user
+        ).distinct().first()
+        if not order:
+            raise Http404("Order not found")
     else:
         order = get_object_or_404(Order, id=order_id)
     
@@ -103,9 +110,65 @@ def cart_view(request):
                 messages.error(request, "Panier vide")
                 return redirect('cart_view')
             
+            # Check stock availability before checkout
+            for item in cart.orderitem_set.all():
+                if item.quantity > item.product.stock_quantity:
+                    messages.error(request, f"Stock insuffisant pour {item.product.name}. Disponible: {item.product.stock_quantity}")
+                    return redirect('cart_view')
+            
+            # Decrement stock quantities
+            for item in cart.orderitem_set.all():
+                item.product.stock_quantity -= item.quantity
+                item.product.save()
+            
+            # Change cart to order
             cart.status = 'pending'
             cart.save()
             
+            # MARKETPLACE LOGIC: Split order by vendor
+            from collections import defaultdict
+            from orders.models import VendorOrder
+            from django.utils import timezone
+            
+            items_by_vendor = defaultdict(list)
+            for item in cart.orderitem_set.all():
+                vendor = item.product.shop.user
+                items_by_vendor[vendor].append(item)
+            
+            # Create VendorOrders
+            for vendor, items in items_by_vendor.items():
+                vendor_total = sum(item.quantity * item.price for item in items)
+                platform_fee = vendor_total * Decimal('0.10')  # 10% commission
+                vendor_payout = vendor_total - platform_fee
+                
+                vendor_order = VendorOrder.objects.create(
+                    order=cart,
+                    vendor=vendor,
+                    vendor_total=vendor_total,
+                    platform_fee=platform_fee,
+                    vendor_payout=vendor_payout,
+                    status='pending'
+                )
+                
+                # Link items to vendor order
+                for item in items:
+                    item.vendor_order = vendor_order
+                    item.status = 'pending'
+                    item.save()
+                
+                # Notify vendor
+                try:
+                    from notifications.models import Notification
+                    Notification.objects.create(
+                        user=vendor,
+                        type='new_order',
+                        message=f"Nouvelle commande! VendorOrder #{vendor_order.id} - ${vendor_total}",
+                        related_id=vendor_order.id
+                    )
+                except:
+                    pass
+            
+            # Send to payment queue
             message = {
                 "order_id": cart.id,
                 "user_id": request.user.id,
@@ -125,7 +188,7 @@ def cart_view(request):
             except Exception as e:
                 print(f"RabbitMQ error: {e}")
             
-            messages.success(request, "Commande passée avec succès!")
+            messages.success(request, f"Commande passée avec succès! Répartie entre {len(items_by_vendor)} vendeur(s).")
             return redirect('order_list')
             
         elif action == "clear_cart":

@@ -72,9 +72,9 @@
     <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
         <h1 class="page-title">
             {% if user.role == 'vendor' %}
-            📊 Commandes de mes Produits
+            Commandes de mes Produits
             {% else %}
-            📋 Mes Commandes
+            Mes Commandes
             {% endif %}
         </h1>
         <p class="text-muted">Suivez l'état de vos commandes</p>
@@ -111,7 +111,7 @@
 
                 <!-- Order Items -->
                 <div class="mb-3">
-                    <h4 class="text-muted mb-2">📦 Articles commandés:</h4>
+                    <h4 class="text-muted mb-2">Articles commandés:</h4>
                     <div class="table-container">
                         <table class="table">
                             <thead>
@@ -123,12 +123,12 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in order.items %}
+                                {% for item in order.orderitem_set.all %}
                                 <tr>
-                                    <td><strong>{{ item.product_name }}</strong></td>
+                                    <td><strong>{{ item.product.name }}</strong></td>
                                     <td>{{ item.quantity }}</td>
                                     <td>${{ item.price }}</td>
-                                    <td style="text-align: right;">${{ item.subtotal }}</td>
+                                    <td style="text-align: right;">${% widthratio item.quantity 1 item.price %}</td>
                                 </tr>
                                 {% endfor %}
                                 <tr style="font-weight: bold; background: var(--bg-tertiary);">
@@ -143,7 +143,7 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-2" style="flex-wrap: wrap;">
                     <a href="{% url 'order_detail' order.id %}" class="btn btn-primary">
-                        👀 Voir Détails
+                        Voir Détails
                     </a>
 
                     {% if user.role == 'customer' %}
@@ -153,14 +153,14 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="cancel_order">
                         <button type="submit" class="btn btn-danger">
-                            ❌ Annuler
+                            Annuler
                         </button>
                     </form>
                     {% endif %}
 
                     {% if order.status == 'pending' %}
                     <a href="{% url 'payment_create' order.id %}" class="btn btn-success">
-                        💳 Payer
+                        Payer
                     </a>
                     {% endif %}
                     {% endif %}
@@ -172,7 +172,7 @@
                         <input type="hidden" name="action" value="update_status">
                         <input type="hidden" name="status" value="shipped">
                         <button type="submit" class="btn btn-warning">
-                            🚚 Marquer comme Expédié
+                            Marquer comme Expédié
                         </button>
                     </form>
                     {% endif %}
@@ -183,7 +183,7 @@
                         <input type="hidden" name="action" value="update_status">
                         <input type="hidden" name="status" value="delivered">
                         <button type="submit" class="btn btn-success">
-                            ✅ Marquer comme Livré
+                            Marquer comme Livré
                         </button>
                     </form>
                     {% endif %}
@@ -195,7 +195,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="cancel_order">
                         <button type="submit" class="btn btn-danger">
-                            🗑️ Supprimer
+                            Supprimer
                         </button>
                     </form>
                     {% endif %}
@@ -204,7 +204,7 @@
         </div>
         {% empty %}
         <div class="empty-state">
-            <div class="empty-state-icon">😔</div>
+            <div class="empty-state-icon"></div>
             <h3>Aucune commande trouvée</h3>
             <p>
                 {% if user.role == 'customer' %}
@@ -214,7 +214,7 @@
                 {% endif %}
             </p>
             <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">
-                🛍️ Parcourir les Produits
+                Parcourir les Produits
             </a>
         </div>
         {% endfor %}

@@ -29,14 +29,14 @@
                     <li>
                         <a href="{% url 'dashboard' %}"
                             class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                            <span class="nav-icon">🏠</span>
+                            <span class="nav-icon"></span>
                             <span>Tableau de bord</span>
                         </a>
                     </li>
                     <li>
                         <a href="{% url 'product_list' %}"
                             class="{% if 'product' in request.resolver_match.url_name %}active{% endif %}">
-                            <span class="nav-icon">📦</span>
+                            <span class="nav-icon"></span>
                             <span>Produits</span>
                         </a>
                     </li>
@@ -44,14 +44,14 @@
                     <li>
                         <a href="{% url 'order_list' %}"
                             class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">
-                            <span class="nav-icon">📋</span>
+                            <span class="nav-icon"></span>
                             <span>Mes Commandes</span>
                         </a>
                     </li>
                     <li>
                         <a href="{% url 'cart_view' %}"
                             class="{% if 'cart' in request.resolver_match.url_name %}active{% endif %}">
-                            <span class="nav-icon">🛒</span>
+                            <span class="nav-icon"></span>
                             <span>Panier</span>
                         </a>
                     </li>
@@ -66,7 +66,7 @@
                     {% if perms.products.add_product or user.role == 'vendor' or user.role == 'admin' %}
                     <li>
                         <a href="{% url 'create_product' %}">
-                            <span class="nav-icon">➕</span>
+                            <span class="nav-icon"></span>
                             <span>Nouveau Produit</span>
                         </a>
                     </li>
@@ -74,8 +74,20 @@
                     {% if user.role == 'vendor' %}
                     <li>
                         <a href="{% url 'vendor_products' %}">
-                            <span class="nav-icon">📊</span>
+                            <span class="nav-icon"></span>
                             <span>Mes Produits</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'vendor:orders_list' %}">
+                            <span class="nav-icon"></span>
+                            <span>Mes Commandes Vendeur</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'vendor:earnings' %}">
+                            <span class="nav-icon"></span>
+                            <span>Mes Revenus</span>
                         </a>
                     </li>
                     {% endif %}
@@ -89,13 +101,13 @@
                 <ul class="sidebar-nav">
                     <li>
                         <a href="/admin/">
-                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-icon"></span>
                             <span>Panel Admin</span>
                         </a>
                     </li>
                     <li>
                         <a href="/admin/users/user/">
-                            <span class="nav-icon">👥</span>
+                            <span class="nav-icon"></span>
                             <span>Utilisateurs</span>
                         </a>
                     </li>
@@ -116,7 +128,7 @@
                         ☰
                     </button>
                     <a href="{% url 'dashboard' %}" class="logo">
-                        <span class="logo-icon">🛍️</span>
+                        <span class="logo-icon"></span>
                         <span>E-Commerce</span>
                     </a>
                 </div>
@@ -133,20 +145,20 @@
 
                     <!-- Theme Toggle -->
                     <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-                        <span class="icon-moon">🌙</span>
-                        <span class="icon-sun">☀️</span>
+                        <span class="icon-moon"></span>
+                        <span class="icon-sun"></span>
                     </button>
 
                     {% if user.is_authenticated %}
                     <div class="user-badge">
-                        <span>👋</span>
+                        <span></span>
                         <strong>{{ user.username }}</strong>
                         <span>({{ user.get_role_display }})</span>
                     </div>
                     <form method="post" action="{% url 'logout' %}" style="display: inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-secondary btn-sm">
-                            🚪 Déconnexion
+                            Déconnexion
                         </button>
                     </form>
                     {% else %}
@@ -168,7 +180,7 @@
 
                 {% if error %}
                 <div class="alert alert-error" style="margin-top: 1rem;">
-                    ❌ {{ error }}
+                    {{ error }}
                 </div>
                 {% endif %}
             </div>
@@ -187,7 +199,7 @@
                         <!-- Brand Column -->
                         <div class="footer-brand">
                             <div class="footer-logo">
-                                <span>🛍️</span>
+                                <span></span>
                                 <span>E-Commerce</span>
                             </div>
                             <p class="footer-description">
@@ -264,10 +276,10 @@
                             © 2025 E-Commerce Platform - Tous droits réservés
                         </p>
                         <div class="footer-social">
-                            <a href="#" aria-label="Facebook">📘</a>
-                            <a href="#" aria-label="Twitter">🐦</a>
-                            <a href="#" aria-label="LinkedIn">💼</a>
-                            <a href="#" aria-label="Instagram">📷</a>
+                            <a href="#" aria-label="Facebook"></a>
+                            <a href="#" aria-label="Twitter"></a>
+                            <a href="#" aria-label="LinkedIn"></a>
+                            <a href="#" aria-label="Instagram"></a>
                         </div>
                     </div>
                 </div>

@@ -1,22 +1,40 @@
 # Traefik Static Configuration
-# Reverse proxy / Load Balancer (Constraint 2.6)
+# Reverse proxy / Load Balancer with HTTPS Support
 
 api:
   dashboard: true
   insecure: true
 
+# Entry Points Configuration
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
+    # Temporarily disabled for local development
+    # Uncomment for production with valid domain
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure
+    #       scheme: https
   websecure:
     address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
 
+# Certificate Resolver - Let's Encrypt ACME
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      storage: /etc/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# Service Discovery Providers
 providers:
+  docker:
+    exposedByDefault: false
   file:
     filename: /etc/traefik/dynamic.yml
     watch: true
@@ -24,6 +42,12 @@ providers:
     endpoint:
       address: "consul:8500"
     exposedByDefault: false
+    prefix: traefik
 
+# Logging
 log:
   level: INFO
+
+# Access Logs
+accessLog:
+  filepath: /var/log/traefik/access.log

@@ -3,31 +3,34 @@
 {% block title %}Supprimer {{ product.name }} - E-Commerce{% endblock %}
 
 {% block content %}
-<div class="delete-confirm" style="max-width: 500px; margin: 4rem auto; padding: 3rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
-    <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
-    
+<div class="delete-confirm"
+    style="max-width: 500px; margin: 4rem auto; padding: 3rem; background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;"></div>
+
     <h2 style="color: #dc3545; margin-bottom: 1rem;">Confirmation de suppression</h2>
-    
+
     <p style="font-size: 1.2rem; margin-bottom: 1.5rem; color: #333;">
         Êtes-vous sûr de vouloir supprimer le produit
         <strong>"{{ product.name }}"</strong> ?
     </p>
-    
+
     <p style="color: #666; margin-bottom: 2rem;">
         Cette action est irréversible. Toutes les données associées à ce produit seront perdues.
     </p>
 
     <div style="display: flex; gap: 1rem; justify-content: center;">
-        <form method="post" action="{% url 'product_delete' product.id %}" data-method="delete" data-confirm="Supprimer définitivement ce produit?">
+        <form method="post" action="{% url 'product_delete' product.id %}" data-method="delete"
+            data-confirm="Supprimer définitivement ce produit?">
             {% csrf_token %}
             <input type="hidden" name="_method" value="DELETE">
             <button type="submit" class="btn btn-danger" style="padding: 0.75rem 2rem; font-size: 1.1rem;">
-                🗑️ Oui, supprimer
+                Oui, supprimer
             </button>
         </form>
-        
-        <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary" style="text-decoration: none; padding: 0.75rem 2rem;">
-            ❌ Annuler
+
+        <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary"
+            style="text-decoration: none; padding: 0.75rem 2rem;">
+            Annuler
         </a>
     </div>
 </div>

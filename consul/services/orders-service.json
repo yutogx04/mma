@@ -1,0 +1,19 @@
+{
+    "service": {
+        "name": "orders-service",
+        "address": "127.0.0.1",
+        "port": 8000,
+        "tags": [
+            "traefik.enable=true",
+            "traefik.http.routers.orders-get.rule=Method('GET') && (PathPrefix('/api/orders') || PathPrefix('/api/cart'))",
+            "traefik.http.routers.orders-post.rule=Method('POST') && (PathPrefix('/api/orders') || PathPrefix('/api/cart'))",
+            "traefik.http.routers.orders-put.rule=Method('PUT') && PathPrefix('/api/orders')",
+            "traefik.http.routers.orders-delete.rule=Method('DELETE') && (PathPrefix('/api/orders') || PathPrefix('/api/cart'))",
+            "traefik.http.services.orders-service.loadbalancer.server.port=8000"
+        ],
+        "check": {
+            "http": "http://127.0.0.1:8000/health/",
+            "interval": "10s"
+        }
+    }
+}

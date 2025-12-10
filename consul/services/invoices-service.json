@@ -1,0 +1,17 @@
+{
+    "service": {
+        "name": "invoices-service",
+        "address": "127.0.0.1",
+        "port": 8000,
+        "tags": [
+            "traefik.enable=true",
+            "traefik.http.routers.invoices-get.rule=Method('GET') && PathPrefix('/api/invoices')",
+            "traefik.http.routers.invoices-post.rule=Method('POST') && PathPrefix('/api/invoices')",
+            "traefik.http.services.invoices-service.loadbalancer.server.port=8000"
+        ],
+        "check": {
+            "http": "http://127.0.0.1:8000/health/",
+            "interval": "10s"
+        }
+    }
+}

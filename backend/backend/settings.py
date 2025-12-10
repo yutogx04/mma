@@ -13,7 +13,7 @@ if not SECRET_KEY:
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'users.Compte'
 
@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'reviews',
     'payments',
     'shop',
+    'notifications',
 ]
 
 MIDDLEWARE = [

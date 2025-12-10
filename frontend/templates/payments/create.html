@@ -7,51 +7,62 @@
     <div class="breadcrumb" style="margin-bottom: 2rem;">
         <a href="{% url 'order_list' %}" style="color: #007bff; text-decoration: none;">📋 Mes Commandes</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
-        <a href="{% url 'order_detail' order.id %}" style="color: #007bff; text-decoration: none;">Commande #{{ order.id }}</a>
+        <a href="{% url 'order_detail' order.id %}" style="color: #007bff; text-decoration: none;">Commande #{{ order.id
+            }}</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
         <span style="color: #333;">Paiement</span>
     </div>
 
     <div class="payment-header" style="text-align: center; margin-bottom: 2rem;">
-        <h1 style="color: #333; margin-bottom: 0.5rem;">💳 Paiement Sécurisé</h1>
+        <h1 style="color: #333; margin-bottom: 0.5rem;">
+            {% if user.payment_methods.first %}
+            {% if user.payment_methods.first.card_type == 'credit_card' %}💳 Carte de Crédit
+            {% elif user.payment_methods.first.card_type == 'debit_card' %}💳 Carte de Débit
+            {% elif user.payment_methods.first.card_type == 'paypal' %}📧 PayPal
+            {% elif user.payment_methods.first.card_type == 'bank_transfer' %}🏦 Virement Bancaire
+            {% else %}💳 Paiement
+            {% endif %}
+            {% else %}💳 Paiement{% endif %}
+        </h1>
         <p style="color: #666;">Finalisez votre commande #{{ order.id }}</p>
     </div>
 
     <div class="payment-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
         <!-- Order Summary -->
-        <div class="order-summary" style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <div class="order-summary"
+            style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
             <h3 style="color: #333; margin-bottom: 1.5rem;">📊 Récapitulatif</h3>
-            
+
             <div style="space-y: 1rem;">
                 <div style="display: flex; justify-content: between; margin-bottom: 1rem;">
                     <span style="color: #666;">Commande:</span>
                     <span style="font-weight: bold;">#{{ order.id }}</span>
                 </div>
-                
+
                 <div style="display: flex; justify-content: between; margin-bottom: 1rem;">
                     <span style="color: #666;">Date:</span>
                     <span>{{ order.created_at|date:"d/m/Y" }}</span>
                 </div>
-                
+
                 <div style="display: flex; justify-content: between; margin-bottom: 1rem;">
                     <span style="color: #666;">Articles:</span>
                     <span>{{ order.items.count }}</span>
                 </div>
-                
+
                 <hr style="margin: 1.5rem 0;">
-                
+
                 <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
                     <span style="color: #666;">Sous-total:</span>
                     <span>${{ order.total_amount }}</span>
                 </div>
-                
+
                 <div style="display: flex; justify-content: between; margin-bottom: 0.5rem;">
                     <span style="color: #666;">Livraison:</span>
                     <span style="color: #28a745;">Gratuit</span>
                 </div>
-                
+
                 <hr style="margin: 1rem 0;">
-                
+
                 <div style="display: flex; justify-content: between;">
                     <span style="font-size: 1.2rem; font-weight: bold; color: #333;">Total:</span>
                     <span style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${{ order.total_amount }}</span>
@@ -60,42 +71,68 @@
         </div>
 
         <!-- Payment Form -->
-        <div class="payment-form" style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+        <div class="payment-form"
+            style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
             <h3 style="color: #333; margin-bottom: 1.5rem;">💳 Informations de Paiement</h3>
-            
-<form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="order_id" value="{{ order.id }}">
-    
-    <div style="text-align: center; margin: 2rem 0;">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">💳</div>
-        <h3 style="color: #333; margin-bottom: 1rem;">Paiement Simulation</h3>
-        <p style="color: #666; margin-bottom: 1.5rem;">
-            Ceci est une simulation de paiement. Aucun vrai paiement ne sera effectué.
-        </p>
-    </div>
-    
-    <div style="margin-bottom: 2rem;">
-        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
-            Méthode de paiement simulée:
-        </label>
-        <select name="payment_method" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
-            <option value="credit_card">💳 Carte de Crédit</option>
-            <option value="paypal">📧 PayPal</option>
-            <option value="bank_transfer">🏦 Virement Bancaire</option>
-        </select>
-    </div>
-    
-    <button type="submit" class="btn btn-success" 
-            style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-bottom: 1rem;">
-        💳 Simuler le Paiement de ${{ order.total_amount }}
-    </button>
-</form>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">
+                        {% if user.payment_methods.first %}
+                        {% if user.payment_methods.first.card_type == 'credit_card' %}💳
+                        {% elif user.payment_methods.first.card_type == 'debit_card' %}💳
+                        {% elif user.payment_methods.first.card_type == 'paypal' %}📧
+                        {% elif user.payment_methods.first.card_type == 'bank_transfer' %}🏦
+                        {% else %}💳{% endif %}
+                        {% else %}💳{% endif %}
+                    </div>
+                    <h3 style="color: #333; margin-bottom: 0.5rem;">Vérifiez votre moyen de paiement</h3>
+                    {% if user.payment_methods.first %}
+                    <p style="color: #666; margin-bottom: 0.5rem;">
+                        <strong>{{ user.payment_methods.first.card_holder_name }}</strong>
+                    </p>
+                    <p style="color: #666; margin-bottom: 1.5rem;">
+                        Carte: <strong>•••• {{ user.payment_methods.first.card_last_four }}</strong>
+                    </p>
+                    {% endif %}
+                    <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                        Pour sécuriser votre paiement, veuillez vérifier les informations de votre carte.
+                    </p>
+                </div>
+
+                <!-- Card Verification Form -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                        Derniers 4 chiffres de votre carte:
+                    </label>
+                    <input type="text" name="card_last_four" required maxlength="4" pattern="[0-9]{4}"
+                        placeholder="{{ user.payment_methods.first.card_last_four }}"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                        CVV (3 chiffres au dos):
+                    </label>
+                    <input type="text" name="cvv" required maxlength="3" pattern="[0-9]{3}" placeholder="123"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+
+                <button type="submit" class="btn btn-success"
+                    style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-bottom: 1rem;">
+                    💳 Payer ${{ order.total_amount }}
+                </button> </button>
+            </form>
         </div>
     </div>
 
     <!-- Trust Badges -->
-    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div
+        style="text-align: center; margin-top: 3rem; padding: 2rem; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
         <h4 style="color: #333; margin-bottom: 1rem;">🛡️ Vous êtes entre de bonnes mains</h4>
         <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
             <div style="text-align: center;">
@@ -103,13 +140,13 @@
                 <div style="font-weight: bold; color: #333;">Paiement Sécurisé</div>
                 <div style="color: #666; font-size: 0.9rem;">SSL 256-bit</div>
             </div>
-            
+
             <div style="text-align: center;">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">💯</div>
                 <div style="font-weight: bold; color: #333;">Satisfaction</div>
                 <div style="color: #666; font-size: 0.9rem;">Garantie 30 jours</div>
             </div>
-            
+
             <div style="text-align: center;">
                 <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚚</div>
                 <div style="font-weight: bold; color: #333;">Livraison</div>
@@ -120,19 +157,19 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
-    const cardDetails = document.querySelector('.card-details');
-    
-    paymentMethods.forEach(method => {
-        method.addEventListener('change', function() {
-            if (this.value === 'paypal') {
-                cardDetails.style.display = 'none';
-            } else {
-                cardDetails.style.display = 'block';
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
+        const cardDetails = document.querySelector('.card-details');
+
+        paymentMethods.forEach(method => {
+            method.addEventListener('change', function () {
+                if (this.value === 'paypal') {
+                    cardDetails.style.display = 'none';
+                } else {
+                    cardDetails.style.display = 'block';
+                }
+            });
         });
     });
-});
 </script>
 {% endblock %}

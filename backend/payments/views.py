@@ -8,32 +8,77 @@ from .models import Payment
 from orders.models import Order
 
 
+import pika
+import json
+from config import RABBITMQ_HOST
+
+def publish_payment_event(order_id, amount):
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host=RABBITMQ_HOST)
+    )
+    channel = connection.channel()
+    channel.queue_declare(queue='payment', durable=True)
+    channel.queue_declare(queue='notifications', durable=True)
+    
+    message = json.dumps({'order_id': order_id, 'amount': str(amount)})
+    
+    # Publish to Payment Worker
+    channel.basic_publish(
+        exchange='',
+        routing_key='payment',
+        body=message,
+        properties=pika.BasicProperties(delivery_mode=2))
+        
+    # Publish to Notification Worker
+    channel.basic_publish(
+        exchange='',
+        routing_key='notifications',
+        body=message,
+        properties=pika.BasicProperties(delivery_mode=2))
+    connection.close()
+
 @login_required
 def payment_create_view(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     
     if request.method == "POST":
-        payment_method = request.POST.get("payment_method", "credit_card")
+        # Get users default payment method
+        default_method = request.user.payment_methods.filter(is_default=True).first()
+        
+        if not default_method:
+             messages.error(request, "Aucun moyen de paiement enregistré.")
+             return redirect('dashboard')
+        
+        # Validate card information
+        card_last_four = request.POST.get('card_last_four')
+        cvv = request.POST.get('cvv')
+        
+        if card_last_four != default_method.card_last_four:
+            messages.error(request, "Les 4 derniers chiffres de la carte ne correspondent pas.")
+            return redirect('payment_create', order_id=order.id)
+        
+        if not cvv or len(cvv) != 3:
+            messages.error(request, "CVV invalide.")
+            return redirect('payment_create', order_id=order.id)
         
         payment = Payment.objects.create(
             order=order,
             amount=order.total_amount,
-            payment_method=payment_method,
+            payment_method='credit_card', # stored type
+            payment_method_used=default_method, # Link to method
             status='pending'
         )
         
-        payment.status = 'succeeded'
-        payment.save()
+        # Async processing via RabbitMQ
+        try:
+            publish_payment_event(order.id, order.total_amount)
+            messages.info(request, f"⏳ Paiement de ${order.total_amount} initié avec la carte finissant par {default_method.card_last_four}...")
+        except Exception as e:
+            payment.status = 'failed'
+            payment.save()
+            messages.error(request, "Erreur de connexion au service de paiement.")
+            return redirect('order_list')
         
-        order.status = 'paid'
-        order.save()
-        
-        for item in order.orderitem_set.all():
-            if item.product.stock_quantity >= item.quantity:
-                item.product.stock_quantity -= item.quantity
-                item.product.save()
-        
-        messages.success(request, f"✅ Paiement de ${order.total_amount} effectué avec succès!")
         return redirect('order_list')
     
     return render(request, "payments/create.html", {'order': order})
@@ -54,17 +99,20 @@ def payment_create_api(request):
         status='pending'
     )
     
-    payment.status = 'succeeded'
-    payment.save()
-    
-    order.status = 'paid'
-    order.save()
-    
-    return Response({
-        'id': payment.id,
-        'status': payment.status,
-        'message': 'Payment processed successfully'
-    }, status=status.HTTP_201_CREATED)
+    try:
+        publish_payment_event(order.id, order.total_amount)
+        return Response({
+            'id': payment.id,
+            'status': 'pending',
+            'message': 'Payment processing started'
+        }, status=status.HTTP_202_ACCEPTED)
+    except Exception as e:
+        payment.status = 'failed'
+        payment.save()
+        return Response({
+            'status': 'failed',
+            'message': str(e)
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 @api_view(['GET'])

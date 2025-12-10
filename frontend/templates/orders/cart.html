@@ -1,41 +1,34 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Mon Panier - E-Commerce{% endblock %}
 
 {% block content %}
 <div class="cart-page animate-slide-up" style="max-width: 1000px; margin: 0 auto;">
-    <!-- Page Header -->
     <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
-        <h1 class="page-title">🛒 Mon Panier</h1>
+        <h1 class="page-title">Mon Panier</h1>
         <p class="text-muted">Gérez vos articles avant de passer commande</p>
     </div>
 
     {% if cart %}
     <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem;">
-        <!-- Cart Items -->
         <div class="cart-items">
-            {% for item in cart.items %}
+            {% for item in cart.orderitem_set.all %}
             <div class="card mb-2">
                 <div class="card-body">
                     <div class="flex gap-3" style="align-items: flex-start;">
-                        <!-- Product Image -->
                         <div class="product-card-image"
                             style="width: 80px; height: 80px; flex-shrink: 0; border-radius: var(--radius-md); font-size: 2rem;">
-                            📦
                         </div>
 
-                        <!-- Product Info -->
                         <div style="flex: 1;">
-                            <h3 style="margin-bottom: 0.25rem;">{{ item.product_name }}</h3>
+                            <h3 style="margin-bottom: 0.25rem;">{{ item.product.name }}</h3>
                             <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                Référence: #{{ item.product_id }}
+                                Référence: #{{ item.product.id }} | Vendeur: {{ item.product.shop.name }}
                             </p>
-                            <div class="text-success" style="font-size: 1.25rem; font-weight: bold;">
-                                ${{ item.price }}
+                            <div class="text-success" style="font-size: 1.25rem; font-weight: bold;">${{ item.price }}
                             </div>
                         </div>
 
-                        <!-- Quantity Controls -->
                         <div style="flex-shrink: 0; text-align: center;">
                             <form method="post" class="flex items-center gap-1">
                                 {% csrf_token %}
@@ -44,34 +37,25 @@
                                 <input type="hidden" name="item_id" value="{{ item.id }}">
 
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}"
-                                    class="btn btn-secondary btn-sm" {% if item.quantity == 1 %}disabled{% endif %}>
-                                    −
-                                </button>
+                                    class="btn btn-secondary btn-sm">−</button>
 
-                                <span class="badge badge-secondary" style="min-width: 40px; padding: 0.5rem;">
-                                    {{ item.quantity }}
-                                </span>
+                                <span class="badge badge-secondary" style="min-width: 40px; padding: 0.5rem;">{{
+                                    item.quantity }}</span>
 
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}"
-                                    class="btn btn-secondary btn-sm">
-                                    +
-                                </button>
+                                    class="btn btn-secondary btn-sm">+</button>
                             </form>
 
-                            <div style="margin-top: 0.5rem; font-weight: bold;">
-                                ${{ item.subtotal }}
-                            </div>
+                            <div style="margin-top: 0.5rem; font-weight: bold;">${% widthratio item.quantity 1
+                                item.price %}</div>
                         </div>
 
-                        <!-- Remove Button -->
                         <form method="post" data-confirm="Retirer cet article du panier?">
                             {% csrf_token %}
                             <input type="hidden" name="_method" value="DELETE">
                             <input type="hidden" name="action" value="remove_item">
                             <input type="hidden" name="item_id" value="{{ item.id }}">
-                            <button type="submit" class="btn btn-danger btn-icon">
-                                🗑️
-                            </button>
+                            <button type="submit" class="btn btn-danger btn-icon">×</button>
                         </form>
                     </div>
                 </div>
@@ -79,10 +63,9 @@
             {% endfor %}
         </div>
 
-        <!-- Cart Summary -->
         <div class="card" style="height: fit-content; position: sticky; top: 80px;">
             <div class="card-header">
-                <h3 style="margin: 0; text-align: center;">📊 Récapitulatif</h3>
+                <h3 style="margin: 0; text-align: center;">Récapitulatif</h3>
             </div>
             <div class="card-body">
                 <div class="flex justify-between mb-2">
@@ -103,27 +86,21 @@
                         }}</span>
                 </div>
 
-                <!-- Checkout Button -->
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="POST">
                     <input type="hidden" name="action" value="checkout">
-                    <button type="submit" class="btn btn-success btn-lg w-full mb-2">
-                        🚀 Passer la Commande
-                    </button>
+                    <button type="submit" class="btn btn-success btn-lg w-full mb-2">Passer la Commande</button>
                 </form>
 
-                <a href="{% url 'product_list' %}" class="btn btn-secondary w-full">
-                    ← Continuer mes Achats
-                </a>
+                <a href="{% url 'product_list' %}" class="btn btn-secondary w-full">← Continuer mes Achats</a>
 
-                <!-- Security Badges -->
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                     <div class="flex gap-2 text-muted"
                         style="font-size: 0.75rem; justify-content: center; flex-wrap: wrap;">
-                        <span>🔒 Paiement sécurisé</span>
-                        <span>🚚 Livraison rapide</span>
-                        <span>💯 Satisfaction garantie</span>
+                        <span>Paiement sécurisé</span>
+                        <span>Livraison rapide</span>
+                        <span>Satisfaction garantie</span>
                     </div>
                 </div>
             </div>
@@ -131,14 +108,11 @@
     </div>
 
     {% else %}
-    <!-- Empty Cart -->
     <div class="empty-state">
-        <div class="empty-state-icon">🛒</div>
+        <div class="empty-state-icon"></div>
         <h3>Votre panier est vide</h3>
         <p>Ajoutez des produits à votre panier pour commencer vos achats</p>
-        <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg mt-3">
-            🛍️ Découvrir nos Produits
-        </a>
+        <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg mt-3">Découvrir nos Produits</a>
     </div>
     {% endif %}
 </div>

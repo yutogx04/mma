@@ -1,0 +1,18 @@
+{
+    "service": {
+        "name": "payments-service",
+        "address": "127.0.0.1",
+        "port": 8000,
+        "tags": [
+            "traefik.enable=true",
+            "traefik.http.routers.payments-get.rule=Method('GET') && (PathPrefix('/api/payments') || PathPrefix('/api/payment-methods'))",
+            "traefik.http.routers.payments-post.rule=Method('POST') && (PathPrefix('/api/payments') || PathPrefix('/api/payment-methods'))",
+            "traefik.http.routers.payments-delete.rule=Method('DELETE') && PathPrefix('/api/payment-methods')",
+            "traefik.http.services.payments-service.loadbalancer.server.port=8000"
+        ],
+        "check": {
+            "http": "http://127.0.0.1:8000/health/",
+            "interval": "10s"
+        }
+    }
+}

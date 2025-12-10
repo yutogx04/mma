@@ -6,7 +6,7 @@
 <div class="product-detail animate-slide-up" style="max-width: 1000px; margin: 0 auto;">
     <!-- Breadcrumb -->
     <div class="mb-3">
-        <a href="{% url 'product_list' %}" class="text-primary">📦 Produits</a>
+        <a href="{% url 'product_list' %}" class="text-primary">Produits</a>
         <span class="text-muted" style="margin: 0 0.5rem;">/</span>
         <span>{{ product.name }}</span>
     </div>
@@ -18,7 +18,7 @@
             <img src="{{ product.image.url }}" alt="{{ product.name }}"
                 style="max-width: 100%; max-height: 100%; border-radius: var(--radius-md);">
             {% else %}
-            📦
+
             {% endif %}
         </div>
 
@@ -38,13 +38,13 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="stat-card">
-                    <div class="stat-icon">🏪</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-value" style="font-size: 1rem;">{{ product.shop.name }}</div>
                     <div class="stat-label">Magasin</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-icon">📁</div>
+                    <div class="stat-icon"></div>
                     <div class="stat-value" style="font-size: 1rem;">{{ product.category.name }}</div>
                     <div class="stat-label">Catégorie</div>
                 </div>
@@ -54,15 +54,15 @@
             <div class="mb-3">
                 {% if product.stock_quantity > 10 %}
                 <span class="badge badge-success" style="padding: 0.5rem 1rem;">
-                    ✅ En stock ({{ product.stock_quantity }} disponibles)
+                    En stock ({{ product.stock_quantity }} disponibles)
                 </span>
                 {% elif product.stock_quantity > 0 %}
                 <span class="badge badge-warning" style="padding: 0.5rem 1rem;">
-                    ⚠️ Stock faible ({{ product.stock_quantity }} restants)
+                    Stock faible ({{ product.stock_quantity }} restants)
                 </span>
                 {% else %}
                 <span class="badge badge-danger" style="padding: 0.5rem 1rem;">
-                    ❌ Rupture de stock
+                    Rupture de stock
                 </span>
                 {% endif %}
             </div>
@@ -82,25 +82,25 @@
                         <div style="flex: 1;">
                             <label class="form-label">&nbsp;</label>
                             <button type="submit" class="btn btn-success btn-lg w-full">
-                                🛒 Ajouter au Panier
+                                Ajouter au Panier
                             </button>
                         </div>
                     </div>
                 </form>
                 {% elif user.is_authenticated and user.role == 'customer' %}
                 <button class="btn btn-secondary btn-lg w-full" disabled>
-                    ❌ Indisponible
+                    Indisponible
                 </button>
                 {% elif not user.is_authenticated %}
                 <div class="card">
                     <div class="card-body text-center">
-                        <div style="font-size: 1.5rem; margin-bottom: 1rem;">🔒</div>
+                        <div style="font-size: 1.5rem; margin-bottom: 1rem;"></div>
                         <p class="text-muted mb-3">Connectez-vous pour ajouter ce produit à votre panier</p>
                         <a href="{% url 'login' %}?next={{ request.get_full_path }}" class="btn btn-primary">
-                            🔐 Se connecter
+                            Se connecter
                         </a>
                         <a href="{% url 'register' %}" class="btn btn-secondary">
-                            📝 S'inscrire
+                            S'inscrire
                         </a>
                     </div>
                 </div>
@@ -109,13 +109,13 @@
                 {% if user.is_authenticated and user.role in 'vendor,admin' and product.shop.user == user %}
                 <div class="flex gap-2 mt-3">
                     <a href="{% url 'update_product' product.id %}" class="btn btn-warning" style="flex: 1;">
-                        ✏️ Modifier
+                        Modifier
                     </a>
                     <form method="post" action="{% url 'delete_product' product.id %}"
                         data-confirm="Supprimer définitivement '{{ product.name }}'?" style="flex: 1;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger w-full">
-                            🗑️ Supprimer
+                            Supprimer
                         </button>
                     </form>
                 </div>
@@ -127,25 +127,25 @@
     <!-- Additional Information -->
     <div class="card mb-3">
         <div class="card-header">
-            <h3 style="margin: 0;">📋 Informations Supplémentaires</h3>
+            <h3 style="margin: 0;">Informations Supplémentaires</h3>
         </div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
                 <div>
-                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">📅 Date de création</h4>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Date de création</h4>
                     <p style="font-weight: 600; margin: 0;">{{ product.created_at|date:"d/m/Y H:i" }}</p>
                 </div>
                 <div>
-                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">🔄 Dernière modification
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Dernière modification
                     </h4>
                     <p style="font-weight: 600; margin: 0;">{{ product.updated_at|date:"d/m/Y H:i" }}</p>
                 </div>
                 <div>
-                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">🏪 Vendeur</h4>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Vendeur</h4>
                     <p style="font-weight: 600; margin: 0;">{{ product.shop.user.username }}</p>
                 </div>
                 <div>
-                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">📧 Contact</h4>
+                    <h4 class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.25rem;">Contact</h4>
                     <p style="font-weight: 600; margin: 0;">{{ product.shop.user.email }}</p>
                 </div>
             </div>
@@ -155,14 +155,14 @@
     <!-- Reviews Section -->
     <div class="card">
         <div class="card-header">
-            <h3 style="margin: 0;">⭐ Avis des Clients</h3>
+            <h3 style="margin: 0;">Avis des Clients</h3>
         </div>
         <div class="card-body">
             <!-- Add Review Form -->
             {% if user.is_authenticated and user.role == 'customer' %}
             <div class="card mb-3" style="background: var(--bg-secondary);">
                 <div class="card-body">
-                    <h4 class="mb-2">📝 Donner votre avis</h4>
+                    <h4 class="mb-2">Donner votre avis</h4>
                     <form method="post" action="{% url 'review_create' product.id %}">
                         {% csrf_token %}
                         <div class="form-group">
@@ -181,7 +181,7 @@
                                 placeholder="Partagez votre expérience..."></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            ✅ Publier l'avis
+                            Publier l'avis
                         </button>
                     </form>
                 </div>
@@ -210,7 +210,7 @@
                 {% endfor %}
                 {% else %}
                 <div class="empty-state" style="padding: 2rem;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">⭐</div>
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;"></div>
                     <p class="text-muted">Aucun avis pour le moment. Soyez le premier à noter ce produit!</p>
                 </div>
                 {% endif %}

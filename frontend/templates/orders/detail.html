@@ -80,13 +80,75 @@
                 </div>
             </div>
 
-            <!-- Order Items -->
-            <div class="order-items-card" style="flex: 2; min-width: 300px;">
-                <h2 style="color: #333; margin-bottom: 1.5rem;">📦 Articles de la Commande</h2>
+            <!-- Order Items by Vendor -->
+            <div class="order-section">
+                <div class="section-header">
+                    <h3 style="margin: 0;">📦 Articles commandés</h3>
+                </div>
+                <div class="section-content">
+                    {% if order.vendor_orders.exists %}
+                    <!-- Grouped by Vendor -->
+                    {% for vendor_order in order.vendor_orders.all %}
+                    <div
+                        style="margin-bottom: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary);">
+                        <div class="flex justify-between items-center mb-3">
+                            <div>
+                                <h4 style="margin: 0;">🏪 Vendeur: {{ vendor_order.vendor.username }}</h4>
+                                <p class="text-muted" style="margin: 0.25rem 0 0 0;">
+                                    VendorOrder #{{ vendor_order.id }} |
+                                    Statut: <strong>{{ vendor_order.get_status_display }}</strong>
+                                </p>
+                            </div>
+                            {% if vendor_order.tracking_number %}
+                            <div>
+                                <span class="badge badge-primary">
+                                    📦 Suivi: {{ vendor_order.tracking_number }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
 
-                <div class="items-list">
+                        {% for item in vendor_order.orderitem_set.all %}
+                        <div
+                            style="display: flex; justify-content: between; align-items: center; padding: 1rem; background: white; border-radius: 8px; margin-bottom: 0.5rem;">
+                            <div style="flex: 2;">
+                                <h5 style="color: #333; margin: 0;">{{ item.product.name }}</h5>
+                                <div style="color: #666; font-size: 0.9rem;">
+                                    Référence: #{{ item.product.id }}
+                                </div>
+                            </div>
+
+                            <div style="flex: 1; text-align: center;">
+                                <div style="font-weight: bold; color: #333;">Quantité</div>
+                                <div style="font-size: 1.1rem; color: #666;">{{ item.quantity }}</div>
+                            </div>
+
+                            <div style="flex: 1; text-align: center;">
+                                <div style="font-weight: bold; color: #333;">Prix</div>
+                                <div style="font-size: 1.1rem; color: #666;">${{ item.price }}</div>
+                            </div>
+
+                            <div style="flex: 1; text-align: right;">
+                                <div style="font-weight: bold; color: #333;">Sous-total</div>
+                                <div style="font-size: 1.3rem; font-weight: bold; color: #28a745;">
+                                    ${%widthratio item.quantity 1 item.price %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <div
+                            style="text-align: right; padding-top: 1rem; border-top: 2px solid #ddd; margin-top: 1rem;">
+                            <strong>Total vendeur:</strong>
+                            <span style="font-size: 1.25rem; color: var(--success);">${{ vendor_order.vendor_total
+                                }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <!-- Fallback: No vendor orders (old data) -->
                     {% for item in order.orderitem_set.all %}
-                    <div class="item-card"
+                    <div
                         style="display: flex; justify-content: between; align-items: center; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;">
                         <div style="flex: 2;">
                             <h4 style="color: #333; margin-bottom: 0.5rem;">{{ item.product.name }}</h4>
@@ -107,13 +169,15 @@
 
                         <div style="flex: 1; text-align: right;">
                             <div style="font-weight: bold; color: #333;">Sous-total</div>
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">${{ item.subtotal }}
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;">
+                                ${%widthratio item.quantity 1 item.price %}
                             </div>
                         </div>
                     </div>
                     {% empty %}
                     <p style="color: #666; text-align: center;">Aucun article dans cette commande</p>
                     {% endfor %}
+                    {% endif %}
 
                     <!-- Total -->
                     <div

@@ -5,23 +5,27 @@
 {% block content %}
 <div class="review-page" style="max-width: 600px; margin: 0 auto;">
     <div class="breadcrumb" style="margin-bottom: 2rem;">
-        <a href="{% url 'product_list' %}" style="color: #007bff; text-decoration: none;">📦 Produits</a>
+        <a href="{% url 'product_list' %}" style="color: #007bff; text-decoration: none;">Produits</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
-        <a href="{% url 'product_detail' product.id %}" style="color: #007bff; text-decoration: none;">{{ product.name }}</a>
+        <a href="{% url 'product_detail' product.id %}" style="color: #007bff; text-decoration: none;">{{ product.name
+            }}</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
         <span style="color: #333;">Donner son avis</span>
     </div>
 
     <div class="review-header" style="text-align: center; margin-bottom: 2rem;">
-        <h1 style="color: #333; margin-bottom: 0.5rem;">⭐ Donner votre avis</h1>
+        <h1 style="color: #333; margin-bottom: 0.5rem;">Donner votre avis</h1>
         <p style="color: #666;">Partagez votre expérience avec "{{ product.name }}"</p>
     </div>
 
-    <div class="review-form-container" style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+    <div class="review-form-container"
+        style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
         <!-- Product Preview -->
-        <div class="product-preview" style="display: flex; gap: 1.5rem; align-items: center; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 2rem;">
-            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
-                📦
+        <div class="product-preview"
+            style="display: flex; gap: 1.5rem; align-items: center; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 2rem;">
+            <div
+                style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem;">
+
             </div>
             <div>
                 <h3 style="color: #333; margin-bottom: 0.5rem;">{{ product.name }}</h3>
@@ -34,19 +38,18 @@
 
         <form method="post">
             {% csrf_token %}
-            
+
             <!-- Rating -->
             <div style="margin-bottom: 2rem;">
                 <label style="display: block; margin-bottom: 1rem; font-weight: bold; font-size: 1.1rem;">
-                    📊 Note globale:
+                    Note globale:
                 </label>
-                <div class="rating-stars" style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem;">
+                <div class="rating-stars"
+                    style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1rem;">
                     {% for i in "54321" %}
                     <label style="cursor: pointer; font-size: 2rem;">
-                        <input type="radio" name="rating" value="{{ i }}" required 
-                               style="display: none;">
-                        <span class="star" data-rating="{{ i }}" 
-                              style="color: #ddd; transition: color 0.2s;">★</span>
+                        <input type="radio" name="rating" value="{{ i }}" required style="display: none;">
+                        <span class="star" data-rating="{{ i }}" style="color: #ddd; transition: color 0.2s;">★</span>
                     </label>
                     {% endfor %}
                 </div>
@@ -58,16 +61,16 @@
             <!-- Comment -->
             <div style="margin-bottom: 2rem;">
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
-                    📝 Votre commentaire:
+                    Votre commentaire:
                 </label>
-                <textarea name="comment" required 
-                          placeholder="Partagez votre expérience avec ce produit... Qu'avez-vous aimé ? Y a-t-il des points à améliorer ?"
-                          style="width: 100%; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; height: 150px; resize: vertical; font-size: 1rem;"></textarea>
+                <textarea name="comment" required
+                    placeholder="Partagez votre expérience avec ce produit... Qu'avez-vous aimé ? Y a-t-il des points à améliorer ?"
+                    style="width: 100%; padding: 1rem; border: 1px solid #ddd; border-radius: 8px; height: 150px; resize: vertical; font-size: 1rem;"></textarea>
             </div>
 
             <!-- Review Guidelines -->
             <div style="background: #fff3cd; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-                <h4 style="color: #856404; margin-bottom: 1rem;">💡 Conseils pour un bon avis:</h4>
+                <h4 style="color: #856404; margin-bottom: 1rem;">Conseils pour un bon avis:</h4>
                 <ul style="color: #856404; padding-left: 1.5rem; margin: 0;">
                     <li>Soyez honnête et objectif</li>
                     <li>Décrivez votre expérience personnelle</li>
@@ -78,72 +81,72 @@
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="btn btn-success" 
-                    style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-bottom: 1rem;">
-                ✅ Publier mon Avis
+            <button type="submit" class="btn btn-success"
+                style="width: 100%; padding: 1rem; font-size: 1.2rem; margin-bottom: 1rem;">
+                Publier mon Avis
             </button>
-            
-            <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary" 
-               style="width: 100%; padding: 1rem; text-decoration: none; text-align: center; display: block;">
-                ❌ Annuler
+
+            <a href="{% url 'product_detail' product.id %}" class="btn btn-secondary"
+                style="width: 100%; padding: 1rem; text-decoration: none; text-align: center; display: block;">
+                Annuler
             </a>
         </form>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const stars = document.querySelectorAll('.star');
-    const ratingText = document.getElementById('rating-text');
-    const ratingDescriptions = {
-        '1': '⭐ - Très déçu',
-        '2': '⭐⭐ - Déçu',
-        '3': '⭐⭐⭐ - Correct',
-        '4': '⭐⭐⭐⭐ - Satisfait',
-        '5': '⭐⭐⭐⭐⭐ - Très satisfait'
-    };
+    document.addEventListener('DOMContentLoaded', function () {
+        const stars = document.querySelectorAll('.star');
+        const ratingText = document.getElementById('rating-text');
+        const ratingDescriptions = {
+            '1': '- Très déçu',
+            '2': '- Déçu',
+            '3': '- Correct',
+            '4': '- Satisfait',
+            '5': '- Très satisfait'
+        };
 
-    stars.forEach(star => {
-        star.addEventListener('mouseover', function() {
-            const rating = this.getAttribute('data-rating');
-            highlightStars(rating);
-            ratingText.textContent = ratingDescriptions[rating];
-        });
-
-        star.addEventListener('click', function() {
-            const rating = this.getAttribute('data-rating');
-            document.querySelector(`input[value="${rating}"]`).checked = true;
-            highlightStars(rating);
-            ratingText.textContent = ratingDescriptions[rating];
-        });
-    });
-
-    document.querySelector('.rating-stars').addEventListener('mouseleave', function() {
-        const checkedRating = document.querySelector('input[name="rating"]:checked');
-        if (checkedRating) {
-            highlightStars(checkedRating.value);
-            ratingText.textContent = ratingDescriptions[checkedRating.value];
-        } else {
-            resetStars();
-            ratingText.textContent = 'Sélectionnez une note';
-        }
-    });
-
-    function highlightStars(rating) {
         stars.forEach(star => {
-            if (star.getAttribute('data-rating') <= rating) {
-                star.style.color = '#ffc107';
+            star.addEventListener('mouseover', function () {
+                const rating = this.getAttribute('data-rating');
+                highlightStars(rating);
+                ratingText.textContent = ratingDescriptions[rating];
+            });
+
+            star.addEventListener('click', function () {
+                const rating = this.getAttribute('data-rating');
+                document.querySelector(`input[value="${rating}"]`).checked = true;
+                highlightStars(rating);
+                ratingText.textContent = ratingDescriptions[rating];
+            });
+        });
+
+        document.querySelector('.rating-stars').addEventListener('mouseleave', function () {
+            const checkedRating = document.querySelector('input[name="rating"]:checked');
+            if (checkedRating) {
+                highlightStars(checkedRating.value);
+                ratingText.textContent = ratingDescriptions[checkedRating.value];
             } else {
-                star.style.color = '#ddd';
+                resetStars();
+                ratingText.textContent = 'Sélectionnez une note';
             }
         });
-    }
 
-    function resetStars() {
-        stars.forEach(star => {
-            star.style.color = '#ddd';
-        });
-    }
-});
+        function highlightStars(rating) {
+            stars.forEach(star => {
+                if (star.getAttribute('data-rating') <= rating) {
+                    star.style.color = '#ffc107';
+                } else {
+                    star.style.color = '#ddd';
+                }
+            });
+        }
+
+        function resetStars() {
+            stars.forEach(star => {
+                star.style.color = '#ddd';
+            });
+        }
+    });
 </script>
 {% endblock %}
