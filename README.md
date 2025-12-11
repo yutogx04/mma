@@ -368,3 +368,130 @@ Since all Machine 5 services share the same IP, always map **unique
 ports**\
 (8000, 8001, 8002...) and the existing `utils/apps.py` will correctly
 register them in Consul.
+
+# No Docker Deployment Guide
+
+If we don't use Docker, we must run every service as a standard program directly on each operating system (Windows/Linux).
+
+##  WARNING
+Since you don't have containers to isolate processes, one will need to **open MULTIPLE TERMINALS** on each machine to run the different services simultaneously.
+
+##  Prerequisites (Install on ALL machines)
+
+- **Python 3.10+**
+  ```bash
+  pip install -r backend/requirements.txt
+  ```
+
+- **Git**
+
+#  Machine 1: The Gateway (Traefik)
+
+## Role: Runs Traefik reverse proxy
+
+### 1. Download Traefik
+
+### 2. Create Traefik Config
+
+```yaml
+api:
+  insecure: true
+providers:
+  consulCatalog:
+    endpoint:
+      address: "192.168.1.11:8500"
+entryPoints:
+  web:
+    address: ":80"
+```
+
+### 3. Run Traefik
+
+**Windows**
+```powershell
+.	raefik.exe --configfile=traefik.yml
+```
+
+**Linux**
+```bash
+./traefik --configfile=traefik.yml
+```
+
+#  Machine 2: The Registry (Consul)
+
+## Role: Consul Service Registry
+
+**Windows**
+```powershell
+.\consul.exe agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.11 -data-dir=./data
+```
+
+**Linux**
+```bash
+./consul agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.11 -data-dir=./data
+```
+
+#  Machine 3: Messaging (RabbitMQ + Workers)
+
+## Install RabbitMQ
+
+## Python Workers
+
+### Terminal 1 — Payment Worker
+```powershell
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
+python manage.py start_consumer
+```
+
+### Terminal 2 — Notification Worker
+```powershell
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
+python manage.py start_notification_consumer
+```
+
+#  Machine 4: Core (Auth & Database)
+
+### Terminal 1 (Users — 8000)
+```powershell
+$env:SERVICE_NAME="users-service"
+python manage.py runserver 0.0.0.0:8000
+```
+
+### Terminal 2 (Token — 8001)
+```powershell
+$env:SERVICE_NAME="token-service"
+python manage.py runserver 0.0.0.0:8001
+```
+
+#  Machine 5: Marketplace Services
+
+### Products (8000)
+```powershell
+$env:SERVICE_NAME="products-service"
+python manage.py runserver 0.0.0.0:8000
+```
+
+### Orders (8001)
+```powershell
+$env:SERVICE_NAME="orders-service"
+python manage.py runserver 0.0.0.0:8001
+```
+
+### Shop (8002)
+```powershell
+$env:SERVICE_NAME="shop-service"
+python manage.py runserver 0.0.0.0:8002
+```
+
+### Reviews (8003)
+```powershell
+$env:SERVICE_NAME="reviews-service"
+python manage.py runserver 0.0.0.0:8003
+```
+
+## TIP
+Setting `$env:SERVICE_NAME` tells the code which service is running so it registers correctly with Consul.
