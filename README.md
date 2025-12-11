@@ -371,27 +371,36 @@ register them in Consul.
 
 # No Docker Deployment Guide
 
-If we don't use Docker, we must run every service as a standard program directly on each operating system (Windows/Linux).
+If we can't use Docker, we must run every service as a standard program directly on an operating system (Windows/Linux).
 
-##  WARNING
-Since you don't have containers to isolate processes, one will need to **open MULTIPLE TERMINALS** on each machine to run the different services simultaneously.
+## WARNING
+Since we don't have containers to isolate processes (no Docker), we will need to open **multiple terminal windows** on each machine to run the different services simultaneously.
 
-##  Prerequisites (Install on ALL machines)
+---
 
-- **Python 3.10+**
-  ```bash
-  pip install -r backend/requirements.txt
-  ```
+## Prerequisites (Install on ALL machines)
 
-- **Git**
+### Python 3.10+
+Make sure Python and pip are in the PATH.
 
-#  Machine 1: The Gateway (Traefik)
+```bash
+pip install -r backend/requirements.txt
+```
 
-## Role: Runs Traefik reverse proxy
+### Git
+Used to clone your repository on each machine.
 
-### 1. Download Traefik
+---
 
-### 2. Create Traefik Config
+# Machine 1: The Gateway (Traefik)
+
+**Role:** Runs the Traefik executable.
+
+### Download Traefik
+Download the Traefik binary for your OS (Windows .exe or Linux binary) from GitHub.
+
+### Create Config File  
+Create a file named `traefik.yml` in the same folder as the executable:
 
 ```yaml
 api:
@@ -399,13 +408,13 @@ api:
 providers:
   consulCatalog:
     endpoint:
-      address: "192.168.1.11:8500"
+      address: "192.168.1.11:8500" # Machine 2 IP
 entryPoints:
   web:
     address: ":80"
 ```
 
-### 3. Run Traefik
+### Run Traefik
 
 **Windows**
 ```powershell
@@ -417,9 +426,16 @@ entryPoints:
 ./traefik --configfile=traefik.yml
 ```
 
-#  Machine 2: The Registry (Consul)
+---
 
-## Role: Consul Service Registry
+# Machine 2: The Registry (Consul)
+
+**Role:** Runs Consul service registry.
+
+### Download Consul
+Download the Consul binary from HashiCorp.
+
+### Run Consul
 
 **Windows**
 ```powershell
@@ -430,68 +446,136 @@ entryPoints:
 ```bash
 ./consul agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.11 -data-dir=./data
 ```
+*(Make sure `-bind` matches this machine’s real IP.)*
 
-#  Machine 3: Messaging (RabbitMQ + Workers)
+---
 
-## Install RabbitMQ
+# Machine 3: Messaging (RabbitMQ + Workers)
 
-## Python Workers
+**Role:** RabbitMQ server + Python workers.
 
-### Terminal 1 — Payment Worker
+### Install RabbitMQ
+Install RabbitMQ Server and Erlang for the OS, the start the server normally.
+
+### Run Python Workers  
+we must launch **two separate terminal windows**.
+
+---
+
+## Terminal 1 (Payment Worker)
+
 ```powershell
+# Windows
 $env:RABBITMQ_HOST="192.168.1.12"
 $env:CONSUL_HOST="192.168.1.11"
 $env:DATABASE_URL="mysql://..."
 python manage.py start_consumer
 ```
 
-### Terminal 2 — Notification Worker
+## Terminal 2 (Notification Worker)
+
 ```powershell
+# Windows
 $env:RABBITMQ_HOST="192.168.1.12"
 $env:CONSUL_HOST="192.168.1.11"
 $env:DATABASE_URL="mysql://..."
 python manage.py start_notification_consumer
 ```
 
-#  Machine 4: Core (Auth & Database)
+---
 
-### Terminal 1 (Users — 8000)
+# Machine 4: Core (Auth & Database)
+
+**Role:** Hosts MySQL (or PostgreSQL), and the authentication APIs.
+
+### Install Database
+Install MySQL Server (or PostgreSQL) and create your application database.
+
+### Run Django Services  
+You need **two terminal windows**.
+
+---
+
+## Terminal 1 (Users Service - Port 8000)
+
 ```powershell
 $env:SERVICE_NAME="users-service"
+$env:DJANGO_HOST="192.168.1.13" 
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8000
 ```
 
-### Terminal 2 (Token — 8001)
+## Terminal 2 (Token Service - Port 8001)
+
 ```powershell
 $env:SERVICE_NAME="token-service"
+$env:DJANGO_HOST="192.168.1.13"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8001
 ```
 
-#  Machine 5: Marketplace Services
+---
 
-### Products (8000)
+# Machine 5: Marketplace (App Services)
+
+**Role:** Runs the rest of the microservices.  
+**Constraint:** Open **one terminal per service**.
+
+---
+
+## Terminal 1 (Products Service – Port 8000)
+
 ```powershell
 $env:SERVICE_NAME="products-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8000
 ```
 
-### Orders (8001)
+## Terminal 2 (Orders Service – Port 8001)
+
 ```powershell
 $env:SERVICE_NAME="orders-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8001
 ```
 
-### Shop (8002)
+## Terminal 3 (Shop Service – Port 8002)
+
 ```powershell
 $env:SERVICE_NAME="shop-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
+# Handles static files and dashboard
 python manage.py runserver 0.0.0.0:8002
 ```
 
-### Reviews (8003)
+## Terminal 4 (Reviews Service – Port 8003)
+
 ```powershell
 $env:SERVICE_NAME="reviews-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8003
 ```
 
-## TIP
-Setting `$env:SERVICE_NAME` tells the code which service is running so it registers correctly with Consul.
+---
+
+# TIP
+
+This works because each service sets the environment variable:
+
+```
+SERVICE_NAME="name-of-service"
+```
+
+The code (in `utils/apps.py`) reads this variable and correctly registers the service with Consul, even though they all run through the same `manage.py runserver` command.
+
+
