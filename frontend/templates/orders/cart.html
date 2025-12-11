@@ -6,7 +6,7 @@
 <div class="cart-page animate-slide-up" style="max-width: 1000px; margin: 0 auto;">
     <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
         <h1 class="page-title">Mon Panier</h1>
-        <p class="text-muted">Gérez vos articles avant de passer commande</p>
+        <p class="text-muted">Gerez vos articles avant de passer commande</p>
     </div>
 
     {% if cart %}
@@ -22,9 +22,8 @@
 
                         <div style="flex: 1;">
                             <h3 style="margin-bottom: 0.25rem;">{{ item.product.name }}</h3>
-                            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.5rem;">
-                                Référence: #{{ item.product.id }} | Vendeur: {{ item.product.shop.name }}
-                            </p>
+                            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.5rem;">Reference: #{{
+                                item.product.id }} | Vendeur: {{ item.product.shop.name }}</p>
                             <div class="text-success" style="font-size: 1.25rem; font-weight: bold;">${{ item.price }}
                             </div>
                         </div>
@@ -35,17 +34,13 @@
                                 <input type="hidden" name="_method" value="PUT">
                                 <input type="hidden" name="action" value="update_quantity">
                                 <input type="hidden" name="item_id" value="{{ item.id }}">
-
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}"
-                                    class="btn btn-secondary btn-sm">−</button>
-
+                                    class="btn btn-secondary btn-sm">-</button>
                                 <span class="badge badge-secondary" style="min-width: 40px; padding: 0.5rem;">{{
                                     item.quantity }}</span>
-
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}"
                                     class="btn btn-secondary btn-sm">+</button>
                             </form>
-
                             <div style="margin-top: 0.5rem; font-weight: bold;">${% widthratio item.quantity 1
                                 item.price %}</div>
                         </div>
@@ -55,7 +50,7 @@
                             <input type="hidden" name="_method" value="DELETE">
                             <input type="hidden" name="action" value="remove_item">
                             <input type="hidden" name="item_id" value="{{ item.id }}">
-                            <button type="submit" class="btn btn-danger btn-icon">×</button>
+                            <button type="submit" class="btn btn-danger btn-icon">x</button>
                         </form>
                     </div>
                 </div>
@@ -65,7 +60,7 @@
 
         <div class="card" style="height: fit-content; position: sticky; top: 80px;">
             <div class="card-header">
-                <h3 style="margin: 0; text-align: center;">Récapitulatif</h3>
+                <h3 style="margin: 0; text-align: center;">Recapitulatif</h3>
             </div>
             <div class="card-body">
                 <div class="flex justify-between mb-2">
@@ -93,12 +88,12 @@
                     <button type="submit" class="btn btn-success btn-lg w-full mb-2">Passer la Commande</button>
                 </form>
 
-                <a href="{% url 'product_list' %}" class="btn btn-secondary w-full">← Continuer mes Achats</a>
+                <a href="{% url 'product_list' %}" class="btn btn-secondary w-full">Continuer mes Achats</a>
 
                 <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
                     <div class="flex gap-2 text-muted"
                         style="font-size: 0.75rem; justify-content: center; flex-wrap: wrap;">
-                        <span>Paiement sécurisé</span>
+                        <span>Paiement securise</span>
                         <span>Livraison rapide</span>
                         <span>Satisfaction garantie</span>
                     </div>
@@ -111,8 +106,8 @@
     <div class="empty-state">
         <div class="empty-state-icon"></div>
         <h3>Votre panier est vide</h3>
-        <p>Ajoutez des produits à votre panier pour commencer vos achats</p>
-        <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg mt-3">Découvrir nos Produits</a>
+        <p>Ajoutez des produits a votre panier pour commencer vos achats</p>
+        <a href="{% url 'product_list' %}" class="btn btn-primary btn-lg mt-3">Decouvrir nos Produits</a>
     </div>
     {% endif %}
 </div>

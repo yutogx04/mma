@@ -1,28 +1,16 @@
-# Traefik Static Configuration
-# Reverse proxy / Load Balancer with HTTPS Support
-
 api:
   dashboard: true
   insecure: true
 
-# Entry Points Configuration
 entryPoints:
   web:
     address: ":80"
-    # Temporarily disabled for local development
-    # Uncomment for production with valid domain
-    # http:
-    #   redirections:
-    #     entryPoint:
-    #       to: websecure
-    #       scheme: https
   websecure:
     address: ":443"
     http:
       tls:
         certResolver: letsencrypt
 
-# Certificate Resolver - Let's Encrypt ACME
 certificatesResolvers:
   letsencrypt:
     acme:
@@ -31,7 +19,6 @@ certificatesResolvers:
       httpChallenge:
         entryPoint: web
 
-# Service Discovery Providers
 providers:
   docker:
     exposedByDefault: false
@@ -44,10 +31,9 @@ providers:
     exposedByDefault: false
     prefix: traefik
 
-# Logging
+
 log:
   level: INFO
 
-# Access Logs
 accessLog:
   filepath: /var/log/traefik/access.log

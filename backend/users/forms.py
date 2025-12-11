@@ -5,8 +5,7 @@ from datetime import datetime
 
 class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
-    
-    # Payment Card Fields
+
     card_type = forms.ChoiceField(
         choices=[
             ('credit_card', 'Carte de Crédit'),

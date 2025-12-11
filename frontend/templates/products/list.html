@@ -25,9 +25,9 @@
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label class="form-label">CatÃ©gorie</label>
+                    <label class="form-label">Catégorie</label>
                     <select name="category" class="form-control">
-                        <option value="">Toutes les catÃ©gories</option>
+                        <option value="">Toutes les catégories</option>
                         {% for category in categories %}
                         <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
                             {{ category.name }}
@@ -68,8 +68,8 @@
                 </div>
 
                 <div class="product-card-meta">
-                    <span>ðŸª {{ product.shop.name }}</span>
-                    <span>ðŸ“ {{ product.category.name }}</span>
+                    <span>{{ product.shop.name }}</span>
+                    <span>{{ product.category.name }}</span>
                 </div>
 
                 <!-- Action Buttons -->
@@ -91,7 +91,7 @@
                     <div class="flex gap-1">
                         {% if perms.products.change_product and product.shop.user == user or user.role == 'admin' %}
                         <a href="{% url 'update_product' product.id %}" class="btn btn-warning btn-icon">
-                            âœ
+                            ✏
                         </a>
                         {% endif %}
 
@@ -100,7 +100,7 @@
                             data-confirm="Supprimer '{{ product.name }}'?">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-icon">
-                                Ã—
+                                ×
                             </button>
                         </form>
                         {% endif %}
@@ -112,8 +112,8 @@
         {% empty %}
         <div class="empty-state" style="grid-column: 1 / -1;">
             <div class="empty-state-icon"></div>
-            <h3>Aucun produit trouvÃ©</h3>
-            <p>Essayez de modifier vos critÃ¨res de recherche ou ajoutez de nouveaux produits.</p>
+            <h3>Aucun produit trouvé</h3>
+            <p>Essayez de modifier vos critères de recherche ou ajoutez de nouveaux produits.</p>
         </div>
         {% endfor %}
     </div>
@@ -144,7 +144,7 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label class="form-label">CatÃ©gorie</label>
+                        <label class="form-label">Catégorie</label>
                         <select name="category_id" required class="form-control">
                             <option value="">Choisir...</option>
                             {% for category in categories %}
@@ -154,7 +154,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-success">
-                        CrÃ©er
+                        Créer
                     </button>
                 </div>
 

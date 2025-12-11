@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Nouveau Produit - E-Commerce{% endblock %}
 
@@ -59,7 +59,7 @@
 
                     <div>
                         <label for="id_stock_quantity"
-                            style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Quantité en stock:</label>
+                            style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Quantite en stock:</label>
                         <input type="number" name="stock_quantity" id="id_stock_quantity" required
                             value="{{ form.stock_quantity.value|default:'' }}"
                             style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;"
@@ -77,12 +77,12 @@
                 <!-- Category -->
                 <div>
                     <label for="id_category"
-                        style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Catégorie:</label>
+                        style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Categorie:</label>
                     <select name="category" id="id_category" required
                         style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
-                        <option value="">Sélectionnez une catégorie</option>
+                        <option value="">Selectionnez une categorie</option>
                         {% for category in categories %}
-                        <option value="{{ category.id }}" {% if form.category.value==category.id %}selected{% endif %}>
+                        <option value="{{ category.id }}" {% if form.category.value == category.id %}selected{% endif %}>
                             {{ category.name }}
                         </option>
                         {% endfor %}
@@ -97,7 +97,7 @@
 
                     {% if not categories %}
                     <div style="color: #ffc107; font-size: 0.9rem; margin-top: 0.5rem;">
-                        Aucune catégorie disponible. Une catégorie "Général" sera créée automatiquement.
+                        Aucune categorie disponible. Une categorie sera creee automatiquement.
                     </div>
                     {% endif %}
                 </div>
@@ -108,7 +108,7 @@
                         style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Description:</label>
                     <textarea name="description" id="id_description" required
                         style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; height: 120px; resize: vertical;"
-                        placeholder="Décrivez votre produit en détail...">{{ form.description.value|default:'' }}</textarea>
+                        placeholder="Decrivez votre produit en detail...">{{ form.description.value|default:'' }}</textarea>
                     {% if form.description.errors %}
                     <div style="color: #dc3545; font-size: 0.9rem; margin-top: 0.5rem;">
                         {% for error in form.description.errors %}
@@ -122,7 +122,7 @@
             <!-- Form Actions -->
             <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
                 <button type="submit" class="btn btn-success" style="flex: 1; padding: 0.75rem; font-size: 1.1rem;">
-                    Créer le Produit
+                    Creer le Produit
                 </button>
                 <a href="{% url 'product_list' %}" class="btn btn-secondary"
                     style="text-decoration: none; padding: 0.75rem 1.5rem;">
@@ -137,10 +137,10 @@
         <h4 style="color: #333; margin-bottom: 1rem;">Conseils pour un bon produit:</h4>
         <ul style="color: #666; padding-left: 1.5rem;">
             <li>Utilisez un nom clair et descriptif</li>
-            <li>Fixez un prix compétitif</li>
-            <li>Décrivez précisément les caractéristiques</li>
-            <li>Mettez à jour régulièrement les stocks</li>
-            <li>Choisissez la catégorie appropriée</li>
+            <li>Fixez un prix competitif</li>
+            <li>Decrivez precisement les caracteristiques</li>
+            <li>Mettez a jour regulierement les stocks</li>
+            <li>Choisissez la categorie appropriee</li>
         </ul>
     </div>
 </div>

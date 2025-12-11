@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block title %}Tableau de Bord - E-Commerce{% endblock %}
 
@@ -9,11 +9,11 @@
     <div class="alert alert-warning mb-3">
         <span></span>
         <div>
-            <strong>Créer votre Magasin</strong>
-            <p class="mb-2" style="margin-top: 0.5rem;">Vous devez créer un magasin avant de pouvoir ajouter des
+            <strong>Creer votre Magasin</strong>
+            <p class="mb-2" style="margin-top: 0.5rem;">Vous devez creer un magasin avant de pouvoir ajouter des
                 produits.</p>
             <a href="{% url 'create_shop' %}" class="btn btn-warning">
-                Créer mon Magasin
+                Creer mon Magasin
             </a>
         </div>
     </div>
@@ -23,7 +23,7 @@
     <div class="welcome-banner">
         <h1>Bienvenue, {{ user.username }}!</h1>
         <p>
-            Rôle: <strong>{{ user.get_role_display }}</strong>
+            Role: <strong>{{ user.get_role_display }}</strong>
             {% if user_shop %} | Magasin: <strong>{{ user_shop.name }}</strong>{% endif %}
         </p>
     </div>
@@ -34,7 +34,7 @@
         <div class="stat-card">
             <div class="stat-icon" style="color: var(--primary);"></div>
             <div class="stat-value">{{ recent_orders|length }}</div>
-            <div class="stat-label">Commandes récentes</div>
+            <div class="stat-label">Commandes recentes</div>
         </div>
         {% endif %}
 
@@ -60,7 +60,7 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Acheter des Produits</h3>
-            <p>Parcourez notre catalogue et trouvez vos produits préférés</p>
+            <p>Parcourez notre catalogue et trouvez vos produits preferes</p>
             <a href="{% url 'product_list' %}" class="btn btn-primary">
                 Explorer les Produits
             </a>
@@ -69,7 +69,7 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Mes Commandes</h3>
-            <p>Suivez l'état de vos commandes et votre historique</p>
+            <p>Suivez l'etat de vos commandes et votre historique</p>
             <a href="{% url 'order_list' %}" class="btn btn-success">
                 Voir mes Commandes
             </a>
@@ -78,7 +78,7 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Mon Panier</h3>
-            <p>Consultez et gérez les articles de votre panier</p>
+            <p>Consultez et gerez les articles de votre panier</p>
             <a href="{% url 'cart_view' %}" class="btn btn-outline">
                 Voir le Panier
             </a>
@@ -89,7 +89,7 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Mes Produits</h3>
-            <p>Gérez votre catalogue de produits</p>
+            <p>Gerez votre catalogue de produits</p>
             <a href="{% url 'vendor_products' %}" class="btn btn-primary">
                 Voir mes Produits
             </a>
@@ -98,9 +98,9 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Nouveau Produit</h3>
-            <p>Ajoutez un nouveau produit à votre boutique</p>
+            <p>Ajoutez un nouveau produit a votre boutique</p>
             <a href="{% url 'create_product' %}" class="btn btn-success">
-                Créer un Produit
+                Creer un Produit
             </a>
         </div>
 
@@ -118,7 +118,7 @@
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Administration</h3>
-            <p>Accédez à l'interface d'administration complète</p>
+            <p>Accedez a l'interface d'administration complete</p>
             <a href="/admin/" class="btn btn-primary">
                 Panel d'Admin
             </a>
@@ -129,14 +129,14 @@
             <h3>Gestion Utilisateurs</h3>
             <p>Managez les utilisateurs et les permissions</p>
             <a href="/admin/users/user/" class="btn btn-success">
-                Gérer les Utilisateurs
+                Gerer les Utilisateurs
             </a>
         </div>
 
         <div class="dashboard-card">
             <div class="dashboard-card-icon"></div>
             <h3>Tous les Produits</h3>
-            <p>Consultez et gérez tous les produits</p>
+            <p>Consultez et gerez tous les produits</p>
             <a href="{% url 'product_list' %}" class="btn btn-outline">
                 Voir les Produits
             </a>
@@ -144,12 +144,10 @@
         {% endif %}
     </div>
 
-
-
     <!-- Notifications Section -->
     <div class="card mt-4" style="margin-bottom: 2rem;">
         <div class="card-header">
-            <h3 style="margin: 0;">Notifications Récentes</h3>
+            <h3 style="margin: 0;">Notifications Recentes</h3>
         </div>
         <div class="card-body">
             {% if notifications %}
@@ -177,13 +175,13 @@
     <!-- Recent Activity Section -->
     <div class="card mt-4">
         <div class="card-header">
-            <h3 style="margin: 0;">Activité Récente</h3>
+            <h3 style="margin: 0;">Activite Recente</h3>
         </div>
         <div class="card-body">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
                 <!-- Recent Orders -->
                 <div>
-                    <h4 class="text-muted mb-2">Dernières Commandes</h4>
+                    <h4 class="text-muted mb-2">Dernieres Commandes</h4>
                     {% if recent_orders %}
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                         {% for order in recent_orders %}
@@ -205,7 +203,7 @@
                     {% else %}
                     <div class="empty-state" style="padding: 1.5rem;">
                         <div style="font-size: 2rem; margin-bottom: 0.5rem;"></div>
-                        <p class="text-muted">Aucune commande récente</p>
+                        <p class="text-muted">Aucune commande recente</p>
                     </div>
                     {% endif %}
                     <a href="{% url 'order_list' %}" class="btn btn-outline w-full mt-2">

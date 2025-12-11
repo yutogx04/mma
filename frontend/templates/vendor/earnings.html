@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Revenus - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="vendor-earnings-page animate-slide-up" style="max-width: 1000px; margin: 0 auto;">
+    <!-- Page Header -->
+    <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
+        <h1 class="page-title">Mes Revenus</h1>
+        <p class="text-muted">Suivez vos paiements et gains</p>
+    </div>
+
+    <!-- Statistics -->
+    <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
+                <div style="font-size: 2rem; font-weight: bold; color: var(--success);">
+                    ${{ stats.total_earned|floatformat:2 }}
+                </div>
+                <div class="text-muted">Total Gagné</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
+                <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">
+                    ${{ stats.paid_out|floatformat:2 }}
+                </div>
+                <div class="text-muted">Déjà Payé</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;"></div>
+                <div style="font-size: 2rem; font-weight: bold; color: var(--warning);">
+                    ${{ stats.pending_payout|floatformat:2 }}
+                </div>
+                <div class="text-muted">En Attente</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payouts List -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">Historique des Paiements</h3>
+        </div>
+        <div class="card-body">
+            {% if payouts %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>VendorOrder</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th>Payé le</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in payouts %}
+                    <tr>
+                        <td><strong>#{{ payout.id }}</strong></td>
+                        <td>
+                            <a href="{% url 'vendor:order_detail' payout.vendor_order.id %}">
+                                VendorOrder #{{ payout.vendor_order.id }}
+                            </a>
+                        </td>
+                        <td>
+                            <span style="font-weight: bold; color: var(--success);">
+                                ${{ payout.amount|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if payout.status == 'pending' %}badge-warning
+                                {% elif payout.status == 'paid' %}badge-success
+                                {% elif payout.status == 'processing' %}badge-primary
+                                {% else %}badge-danger{% endif %}">
+                                {{ payout.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ payout.created_at|date:"d/m/Y" }}</td>
+                        <td>
+                            {% if payout.paid_at %}
+                            {{ payout.paid_at|date:"d/m/Y" }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon"></div>
+                <h3>Aucun paiement</h3>
+                <p>Vos paiements apparaîtront ici après livraison des commandes</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Information Box -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h4>Comment ça marche?</h4>
+            <ul style="margin-bottom: 0;">
+                <li>Quand vous marquez une commande comme <strong>livrée</strong>, un paiement est créé automatiquement
+                </li>
+                <li>La plateforme prend une commission de <strong>10%</strong> sur chaque vente</li>
+                <li>Vous recevez <strong>90%</strong> du montant total de vos ventes</li>
+                <li>Les paiements sont traités sous <strong>7-14 jours</strong> après livraison</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

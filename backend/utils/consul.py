@@ -1,16 +1,8 @@
-"""
-Consul Service Registry and Discovery
-
-Uses config.py for machine IP addresses in multi-server deployment.
-"""
 import requests
 from config import CONSUL_HOST, CONSUL_PORT, DJANGO_HOST, DJANGO_PORT, get_health_check_url
 
 
 def register_service():
-    """
-    Enregistrement d'un service Django dans Consul
-    """
     service_data = {
         "ID": "django-service-1",
         "Name": "django-service",
@@ -40,9 +32,6 @@ def register_django(
     interval: str = "10s",
     tags: list = None
 ):
-    """
-    Enregistrement d'un service Django via requests API
-    """
     try:
         check_url = f"http://{address}:{port}{health_path}"
         service_data = {
@@ -63,9 +52,6 @@ def register_django(
 
 
 def discover_service(name):
-    """
-    Découverte d'un service via Consul
-    """
     try:
         url = f"http://{CONSUL_HOST}:{CONSUL_PORT}/v1/catalog/service/{name}"
         response = requests.get(url).json()
@@ -78,16 +64,10 @@ def discover_service(name):
 
 
 def discover(name):
-    """
-    Découvrir une API via Consul
-    """
     return discover_service(name)
 
 
 def deregister_service(service_id: str):
-    """
-    Désenregistrement d'un service
-    """
     try:
         requests.put(
             f"http://{CONSUL_HOST}:{CONSUL_PORT}/v1/agent/service/deregister/{service_id}"

@@ -11,7 +11,6 @@ class Command(BaseCommand):
         service_id_prefix = f"{SERVICE_NAME}-"
         
         if SERVICE_NAME == "users-service":
-            # 1. Users Service
             users_tags = base_tags + [
                 "traefik.http.routers.users-get.entrypoints=web",
                 "traefik.http.routers.users-get.rule=Method(`GET`) && PathPrefix(`/api/users`)",
@@ -37,7 +36,7 @@ class Command(BaseCommand):
                 tags=users_tags
             )
             
-            # 2. Token Service (JWT generation)
+
             token_tags = base_tags + [
                 "traefik.http.routers.token-post.entrypoints=web",
                 "traefik.http.routers.token-post.rule=Method(`POST`) && PathPrefix(`/api/token`) && !PathPrefix(`/api/token/refresh`)",
@@ -53,7 +52,6 @@ class Command(BaseCommand):
                 tags=token_tags
             )
             
-            # 3. Token Refresh Service
             refresh_tags = base_tags + [
                 "traefik.http.routers.token-refresh-post.entrypoints=web",
                 "traefik.http.routers.token-refresh-post.rule=Method(`POST`) && PathPrefix(`/api/token/refresh`)",
@@ -92,7 +90,6 @@ class Command(BaseCommand):
                 tags=products_tags
             )
             self.stdout.write(self.style.SUCCESS(f'Registered {SERVICE_NAME}'))
-            
-        # Add similar blocks for other services...
+
         else:
             self.stdout.write(self.style.WARNING(f'No registration logic for {SERVICE_NAME}'))

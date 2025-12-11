@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}VendorOrder #{{ vendor_order.id }} - E-Commerce{% endblock %}
+
+{% block content %}
+<div class="vendor-order-detail" style="max-width: 900px; margin: 0 auto;">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb" style="margin-bottom: 2rem;">
+        <a href="{% url 'vendor:orders_list' %}" style="color: #007bff; text-decoration: none;">Mes Commandes</a>
+        <span style="margin: 0 0.5rem; color: #666;">/</span>
+        <span style="color: #333;">VendorOrder #{{ vendor_order.id }}</span>
+    </div>
+
+    <!-- Order Header -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="flex justify-between items-center mb-3">
+                <div>
+                    <h1>VendorOrder #{{ vendor_order.id }}</h1>
+                    <p class="text-muted">
+                        Commande client: <strong>#{{ vendor_order.order.id }}</strong> |
+                        Client: <strong>{{ vendor_order.order.user.username }}</strong>
+                    </p>
+                    <p class="text-muted">Date: {{ vendor_order.created_at|date:"d/m/Y à H:i" }}</p>
+                </div>
+
+                <div style="text-align: right;">
+                    <span class="badge 
+                        {% if vendor_order.status == 'pending' %}badge-warning
+                        {% elif vendor_order.status == 'shipped' %}badge-primary
+                        {% elif vendor_order.status == 'delivered' %}badge-success
+                        {% else %}badge-secondary{% endif %}" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                        {{ vendor_order.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Financial Summary -->
+            <div
+                style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                <div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Total Commande</div>
+                    <div style="font-size: 1.25rem; font-weight: bold;">${{ vendor_order.vendor_total|floatformat:2 }}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Commission (10%)</div>
+                    <div style="font-size: 1.25rem; font-weight: bold; color: var(--warning);">
+                        -${{ vendor_order.platform_fee|floatformat:2 }}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted" style="font-size: 0.875rem;">Votre Revenu</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">
+                        ${{ vendor_order.vendor_payout|floatformat:2 }}
+                    </div>
+                </div>
+            </div>
+
+            {% if vendor_order.tracking_number %}
+            <div style="margin-top: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+                <strong>Numéro de suivi:</strong> {{ vendor_order.tracking_number }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h3 style="margin: 0;">Articles ({{ vendor_order.orderitem_set.count }})</h3>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Produit</th>
+                        <th>Prix</th>
+                        <th>Quantité</th>
+                        <th>Statut</th>
+                        <th style="text-align: right;">Sous-total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in vendor_order.orderitem_set.all %}
+                    <tr>
+                        <td><strong>{{ item.product.name }}</strong></td>
+                        <td>${{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>
+                            <span class="badge badge-secondary">{{ item.get_status_display }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <strong>${% widthratio item.quantity 1 item.price %}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="font-weight: bold; background: var(--bg-tertiary);">
+                        <td colspan="4">Total</td>
+                        <td style="text-align: right;">${{ vendor_order.vendor_total|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3 style="margin: 0;">Actions</h3>
+        </div>
+        <div class="card-body">
+            {% if vendor_order.status == 'pending' %}
+            <form method="post" style="margin-bottom: 1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_shipped">
+                <div class="form-group">
+                    <label>Numéro de suivi:</label>
+                    <input type="text" name="tracking_number" required class="form-control"
+                        placeholder="Ex: 1Z999AA10123456784">
+                </div>
+                <button type="submit" class="btn btn-success btn-lg">
+                    Marquer comme Expédié
+                </button>
+            </form>
+
+            <form method="post" data-confirm="Annuler cette commande? Le stock sera restauré.">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="cancel">
+                <button type="submit" class="btn btn-danger">
+                    Annuler la Commande
+                </button>
+            </form>
+
+            {% elif vendor_order.status == 'shipped' %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="mark_delivered">
+                <button type="submit" class="btn btn-success btn-lg">
+                    Marquer comme Livré
+                </button>
+                <p class="text-muted" style="margin-top: 0.5rem;">
+                    Cela créera un paiement en attente pour vous.
+                </p>
+            </form>
+
+            {% elif vendor_order.status == 'delivered' %}
+            <div class="alert alert-success">
+                Commande livrée le {{ vendor_order.delivered_at|date:"d/m/Y" }}
+                <br>Paiement en cours de traitement.
+            </div>
+
+            {% elif vendor_order.status == 'cancelled' %}
+            <div class="alert alert-warning">
+                Commande annulée
+            </div>
+            {% endif %}
+
+            <a href="{% url 'vendor:orders_list' %}" class="btn btn-secondary">
+                ← Retour aux Commandes
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

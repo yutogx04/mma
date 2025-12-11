@@ -22,7 +22,7 @@ class Command(BaseCommand):
                 channel = connection.channel()
                 channel.queue_declare(queue='payment', durable=True)
                 
-                print("[Payment Consumer] ✓ Connecté à RabbitMQ")
+                print("[Payment Consumer] Connecté à RabbitMQ")
                 print("[Payment Consumer] En attente de messages...")
                 
                 def process(ch, method, properties, body):
@@ -38,7 +38,7 @@ class Command(BaseCommand):
                         payment = Payment.objects.filter(order=order, status='pending').last()
                         
                         if not payment:
-                            print(f"[Payment Consumer] ⚠️  Pas de paiement en attente trouvé pour la commande #{order_id}")
+                            print(f"[Payment Consumer]  Pas de paiement en attente trouvé pour la commande #{order_id}")
                             ch.basic_ack(delivery_tag=method.delivery_tag)
                             return
 
@@ -55,19 +55,19 @@ class Command(BaseCommand):
                                 item.product.stock_quantity -= item.quantity
                                 item.product.save()
                         
-                        print(f"[Payment Consumer] ✅ Paiement validé et stocks mis à jour pour commande #{order_id}")
+                        print(f"[Payment Consumer] Paiement validé et stocks mis à jour pour commande #{order_id}")
                         ch.basic_ack(delivery_tag=method.delivery_tag)
                         
                     except Order.DoesNotExist:
-                        print(f"[Payment Consumer] ❌ Commande #{order_id} introuvable")
+                        print(f"[Payment Consumer] Commande #{order_id} introuvable")
                         ch.basic_ack(delivery_tag=method.delivery_tag)
                         
                     except json.JSONDecodeError as e:
-                        print(f"[Payment Consumer] ❌ JSON invalide: {e}")
+                        print(f"[Payment Consumer] JSON invalide: {e}")
                         ch.basic_ack(delivery_tag=method.delivery_tag)
                         
                     except Exception as e:
-                        print(f"[Payment Consumer] ❌ Erreur: {e}")
+                        print(f"[Payment Consumer]  Erreur: {e}")
                         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
                 
                 channel.basic_consume(
@@ -79,12 +79,12 @@ class Command(BaseCommand):
                 channel.start_consuming()
                 
             except pika.exceptions.AMQPConnectionError as e:
-                print(f"[Payment Consumer] ❌ Échec de connexion: {e}")
+                print(f"[Payment Consumer] Échec de connexion: {e}")
                 if attempt < max_retries - 1:
                     print(f"[Payment Consumer] Nouvelle tentative dans {retry_delay} secondes...")
                     time.sleep(retry_delay)
                 else:
-                    print(f"[Payment Consumer] ❌ Nombre maximum de tentatives atteint. Arrêt.")
+                    print(f"[Payment Consumer]  Nombre maximum de tentatives atteint. Arrêt.")
                     raise
                     
             except KeyboardInterrupt:
@@ -92,7 +92,7 @@ class Command(BaseCommand):
                 break
                 
             except Exception as e:
-                print(f"[Payment Consumer] ❌ Erreur inattendue: {e}")
+                print(f"[Payment Consumer] Erreur inattendue: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
