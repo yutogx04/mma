@@ -310,6 +310,12 @@ services:
     env_file: .env
     environment:
       - SERVICE_NAME=token-service
+  token-refresh-service:
+    image: mma-backend:latest
+    ports: ["8002:8000"]
+    env_file: .env
+    environment:
+      - SERVICE_NAME=token-refresh-service
 ```
 
 Run:
@@ -516,6 +522,15 @@ $env:DATABASE_URL="mysql://..."
 python manage.py runserver 0.0.0.0:8001
 ```
 
+## Terminal 3 (Token Refresh Service - Port 8002)
+
+```powershell
+$env:SERVICE_NAME="token-refresh-service"
+$env:DJANGO_HOST="192.168.1.13"
+$env:CONSUL_HOST="192.168.1.11"
+$env:DATABASE_URL="mysql://..."
+python manage.py runserver 0.0.0.0:8002
+```
 ---
 
 # Machine 5: Marketplace (App Services)
