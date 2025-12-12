@@ -69,11 +69,12 @@ def payment_create_view(request, order_id):
             status='pending'
         )
         
+
         # Async processing via RabbitMQ
         try:
             publish_payment_event(order.id, order.total_amount)
             messages.info(request, f"⏳ Paiement de ${order.total_amount} initié avec la carte finissant par {default_method.card_last_four}...")
-        except Exception as e:
+        except Exception:
             payment.status = 'failed'
             payment.save()
             messages.error(request, "Erreur de connexion au service de paiement.")
@@ -106,12 +107,13 @@ def payment_create_api(request):
             'status': 'pending',
             'message': 'Payment processing started'
         }, status=status.HTTP_202_ACCEPTED)
-    except Exception as e:
+
+    except Exception:
         payment.status = 'failed'
         payment.save()
         return Response({
             'status': 'failed',
-            'message': str(e)
+            'message': 'Payment processing failed'
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 

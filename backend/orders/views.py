@@ -36,41 +36,65 @@ def order_list(request):
     return render(request, "orders/list.html", {'orders': orders})
 
 
+
 @require_http_methods(["GET", "POST"])
 @login_required
 def order_detail(request, order_id):
-    if request.user.role == 'customer':
-        order = get_object_or_404(Order, id=order_id, user=request.user)
-    elif request.user.role == 'vendor':
-        # Use filter + first to avoid MultipleObjectsReturned when order has multiple items from vendor
-        order = Order.objects.filter(
-            id=order_id,
-            orderitem__product__shop__user=request.user
-        ).distinct().first()
-        if not order:
-            raise Http404("Order not found")
-    else:
-        order = get_object_or_404(Order, id=order_id)
+    order = _get_order_by_user_role(request, order_id)
     
     if request.method == 'POST':
-        action = request.POST.get("action")
-        
-        if action == "cancel_order":
-            if order.status in ['cart', 'pending']:
-                order.status = 'cancelled'
-                order.save()
-                messages.success(request, "Commande annulée avec succès")
-            return redirect('order_list')
-            
-        elif action == "update_status":
-            new_status = request.POST.get("status")
-            if (request.user.role == 'vendor' and new_status in ['shipped', 'delivered']) or request.user.role == 'admin':
-                order.status = new_status
-                order.save()
-                messages.success(request, f"Statut mis à jour: {new_status}")
-            return redirect('order_detail', order_id=order.id)
+        return _handle_order_post_actions(request, order)
     
     return render(request, "orders/detail.html", {'order': order})
+
+def _get_order_by_user_role(request, order_id):
+    """Get order based on user role and permissions"""
+    if request.user.role == 'customer':
+        return get_object_or_404(Order, id=order_id, user=request.user)
+    elif request.user.role == 'vendor':
+        return _get_vendor_order(order_id, request.user)
+    else:
+        return get_object_or_404(Order, id=order_id)
+
+def _get_vendor_order(order_id, user):
+    """Get order for vendor user"""
+    order = Order.objects.filter(
+        id=order_id,
+        orderitem__product__shop__user=user
+    ).distinct().first()
+    if not order:
+        raise Http404("Order not found")
+    return order
+
+def _handle_order_post_actions(request, order):
+    """Handle POST actions for order detail"""
+    action = request.POST.get("action")
+    
+    if action == "cancel_order":
+        return _handle_cancel_order(request, order)
+    elif action == "update_status":
+        return _handle_update_status(request, order)
+
+def _handle_cancel_order(request, order):
+    """Handle order cancellation"""
+    if order.status in ['cart', 'pending']:
+        order.status = 'cancelled'
+        order.save()
+        messages.success(request, "Commande annulée avec succès")
+    return redirect('order_list')
+
+def _handle_update_status(request, order):
+    """Handle order status updates"""
+    new_status = request.POST.get("status")
+    can_update = (request.user.role == 'vendor' and new_status in ['shipped', 'delivered']) or request.user.role == 'admin'
+    
+    if can_update:
+        order.status = new_status
+        order.save()
+        messages.success(request, "Statut mis à jour: {}".format(new_status))
+    
+    return redirect('order_detail', order_id=order.id)
+
 
 
 @require_http_methods(["GET", "POST"])
@@ -82,124 +106,174 @@ def cart_view(request):
         action = request.POST.get("action")
         
         if action == "update_quantity":
-            item_id = request.POST.get("item_id")
-            quantity = int(request.POST.get("quantity", 1))
-            cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
-            
-            if quantity > 0:
-                cart_item.quantity = quantity
-                cart_item.save()
-                if cart:
-                    cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
-                    cart.save()
-                messages.success(request, "Quantité mise à jour")
+            _handle_update_quantity(request)
             return redirect('cart_view')
-            
         elif action == "remove_item":
-            item_id = request.POST.get("item_id")
-            cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
-            cart_item.delete()
-            if cart:
-                cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
-                cart.save()
-            messages.success(request, "Article retiré du panier")
+            _handle_remove_item(request)
             return redirect('cart_view')
-            
         elif action == "checkout":
-            if not cart or not cart.orderitem_set.exists():
-                messages.error(request, "Panier vide")
-                return redirect('cart_view')
-            
-            # Check stock availability before checkout
-            for item in cart.orderitem_set.all():
-                if item.quantity > item.product.stock_quantity:
-                    messages.error(request, f"Stock insuffisant pour {item.product.name}. Disponible: {item.product.stock_quantity}")
-                    return redirect('cart_view')
-            
-            # Decrement stock quantities
-            for item in cart.orderitem_set.all():
-                item.product.stock_quantity -= item.quantity
-                item.product.save()
-            
-            # Change cart to order
-            cart.status = 'pending'
-            cart.save()
-            
-            # MARKETPLACE LOGIC: Split order by vendor
-            from collections import defaultdict
-            from orders.models import VendorOrder
-            from django.utils import timezone
-            
-            items_by_vendor = defaultdict(list)
-            for item in cart.orderitem_set.all():
-                vendor = item.product.shop.user
-                items_by_vendor[vendor].append(item)
-            
-            # Create VendorOrders
-            for vendor, items in items_by_vendor.items():
-                vendor_total = sum(item.quantity * item.price for item in items)
-                platform_fee = vendor_total * Decimal('0.10')  # 10% commission
-                vendor_payout = vendor_total - platform_fee
-                
-                vendor_order = VendorOrder.objects.create(
-                    order=cart,
-                    vendor=vendor,
-                    vendor_total=vendor_total,
-                    platform_fee=platform_fee,
-                    vendor_payout=vendor_payout,
-                    status='pending'
-                )
-                
-                # Link items to vendor order
-                for item in items:
-                    item.vendor_order = vendor_order
-                    item.status = 'pending'
-                    item.save()
-                
-                # Notify vendor
-                try:
-                    from notifications.models import Notification
-                    Notification.objects.create(
-                        user=vendor,
-                        type='new_order',
-                        message=f"Nouvelle commande! VendorOrder #{vendor_order.id} - ${vendor_total}",
-                        related_id=vendor_order.id
-                    )
-                except:
-                    pass
-            
-            # Send to payment queue
-            message = {
-                "order_id": cart.id,
-                "user_id": request.user.id,
-                "amount": str(cart.total_amount),
-                "status": "en attente de paiement"
-            }
-            
-            try:
-                with pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST)) as connection:
-                    channel = connection.channel()
-                    channel.queue_declare(queue='payment', durable=True)
-                    channel.basic_publish(
-                        exchange='',
-                        routing_key='payment',
-                        body=json.dumps(message)
-                    )
-            except Exception as e:
-                print(f"RabbitMQ error: {e}")
-            
-            messages.success(request, f"Commande passée avec succès! Répartie entre {len(items_by_vendor)} vendeur(s).")
-            return redirect('order_list')
-            
+            return _handle_checkout(request, cart)
         elif action == "clear_cart":
-            if cart:
-                cart.orderitem_set.all().delete()
-                cart.total_amount = 0
-                cart.save()
-                messages.success(request, "Panier vidé")
+            _handle_clear_cart(request, cart)
             return redirect('cart_view')
     
     return render(request, "orders/cart.html", {'cart': cart})
+
+def _handle_update_quantity(request):
+    """Handle cart quantity updates"""
+    item_id = request.POST.get("item_id")
+    quantity = int(request.POST.get("quantity", 1))
+    cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    
+    if quantity > 0:
+        cart_item.quantity = quantity
+        cart_item.save()
+        cart = Order.objects.filter(user=request.user, status='cart').first()
+        if cart:
+            cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
+            cart.save()
+        messages.success(request, "Quantité mise à jour")
+
+def _handle_remove_item(request):
+    """Handle item removal from cart"""
+    item_id = request.POST.get("item_id")
+    cart_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user)
+    cart_item.delete()
+    cart = Order.objects.filter(user=request.user, status='cart').first()
+    if cart:
+        cart.total_amount = sum(item.quantity * item.price for item in cart.orderitem_set.all())
+        cart.save()
+    messages.success(request, "Article retiré du panier")
+
+def _handle_checkout(request, cart):
+    """Handle checkout process"""
+    if not cart or not cart.orderitem_set.exists():
+        messages.error(request, "Panier vide")
+        return redirect('cart_view')
+    
+    # Check stock availability before checkout
+    stock_errors = _check_stock_availability(cart)
+    if stock_errors:
+        for error in stock_errors:
+            messages.error(request, error)
+        return redirect('cart_view')
+    
+    # Decrement stock quantities
+    _decrement_stock_quantities(cart)
+    
+    # Change cart to order
+    cart.status = 'pending'
+    cart.save()
+    
+    # Process marketplace logic
+    _process_marketplace_orders(cart, request.user)
+    
+    # Send to payment queue
+    _send_to_payment_queue(cart, request.user)
+    
+    vendor_count = len(_group_items_by_vendor(cart))
+    messages.success(request, "Commande passée avec succès! Répartie entre {} vendeur(s).".format(vendor_count))
+    return redirect('order_list')
+
+def _check_stock_availability(cart):
+    """Check stock availability for all cart items"""
+    errors = []
+    for item in cart.orderitem_set.all():
+        if item.quantity > item.product.stock_quantity:
+            error = "Stock insuffisant pour {}. Disponible: {}".format(
+                item.product.name, item.product.stock_quantity)
+            errors.append(error)
+    return errors
+
+def _decrement_stock_quantities(cart):
+    """Decrement stock quantities for all cart items"""
+    for item in cart.orderitem_set.all():
+        item.product.stock_quantity -= item.quantity
+        item.product.save()
+
+def _group_items_by_vendor(cart):
+    """Group cart items by vendor"""
+    from collections import defaultdict
+    items_by_vendor = defaultdict(list)
+    for item in cart.orderitem_set.all():
+        vendor = item.product.shop.user
+        items_by_vendor[vendor].append(item)
+    return items_by_vendor
+
+def _process_marketplace_orders(cart, user):
+    """Process marketplace order splitting and vendor notifications"""
+    from collections import defaultdict
+    from orders.models import VendorOrder
+    from django.utils import timezone
+    
+    items_by_vendor = _group_items_by_vendor(cart)
+    
+    # Create VendorOrders
+    for vendor, items in items_by_vendor.items():
+        vendor_total = sum(item.quantity * item.price for item in items)
+        platform_fee = vendor_total * Decimal('0.10')  # 10% commission
+        vendor_payout = vendor_total - platform_fee
+        
+        vendor_order = VendorOrder.objects.create(
+            order=cart,
+            vendor=vendor,
+            vendor_total=vendor_total,
+            platform_fee=platform_fee,
+            vendor_payout=vendor_payout,
+            status='pending'
+        )
+        
+        # Link items to vendor order
+        for item in items:
+            item.vendor_order = vendor_order
+            item.status = 'pending'
+            item.save()
+        
+        # Notify vendor
+        _notify_vendor(vendor, vendor_order, vendor_total)
+
+def _notify_vendor(vendor, vendor_order, vendor_total):
+    """Send notification to vendor"""
+    try:
+        from notifications.models import Notification
+        Notification.objects.create(
+            user=vendor,
+            type='new_order',
+            message="Nouvelle commande! VendorOrder #{} - ${}".format(vendor_order.id, vendor_total),
+            related_id=vendor_order.id
+        )
+    except:
+        pass
+
+def _send_to_payment_queue(cart, user):
+    """Send payment message to RabbitMQ queue"""
+    message = {
+        "order_id": cart.id,
+        "user_id": user.id,
+        "amount": str(cart.total_amount),
+        "status": "en attente de paiement"
+    }
+    
+
+    try:
+        with pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST)) as connection:
+            channel = connection.channel()
+            channel.queue_declare(queue='payment', durable=True)
+            channel.basic_publish(
+                exchange='',
+                routing_key='payment',
+                body=json.dumps(message)
+            )
+    except pika.exceptions.AMQPConnectionError as e:
+        print("RabbitMQ connection error: {}".format(e))
+
+def _handle_clear_cart(request, cart):
+    """Handle cart clearing"""
+    if cart:
+        cart.orderitem_set.all().delete()
+        cart.total_amount = 0
+        cart.save()
+        messages.success(request, "Panier vidé")
 
 
 @require_http_methods(["POST"])
@@ -214,11 +288,12 @@ def add_to_cart_view(request):
     
     product = get_object_or_404(Product, id=product_id)
     
+
     if quantity > product.stock_quantity:
         messages.error(request, f"Stock insuffisant. Disponible: {product.stock_quantity}")
         return redirect('product_detail', product_id=product_id)
     
-    cart, created = Order.objects.get_or_create(
+    cart, _ = Order.objects.get_or_create(
         user=request.user,
         status='cart',
         defaults={'total_amount': 0}
@@ -315,9 +390,10 @@ def order_create_api(request):
     product_id = request.data.get('product_id')
     quantity = int(request.data.get('quantity', 1))
     
+
     product = get_object_or_404(Product, id=product_id)
     
-    cart, created = Order.objects.get_or_create(
+    cart, _ = Order.objects.get_or_create(
         user=request.user,
         status='cart',
         defaults={'total_amount': 0}

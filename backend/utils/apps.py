@@ -1,4 +1,8 @@
+
 from django.apps import AppConfig
+
+# Constants
+HEALTH_PATH = "/health/"
 
 
 class UtilsConfig(AppConfig):
@@ -28,12 +32,13 @@ class UtilsConfig(AppConfig):
                         "traefik.http.routers.auth-post.rule=Method('POST') && PathPrefix('/api/auth')",
                         "traefik.http.services.users-service.loadbalancer.server.port=8000"
                     ]
+
                     register_django(
                         service_id=f"{service_id_prefix}1",
                         service_name="users-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=users_tags
                     )
@@ -43,12 +48,13 @@ class UtilsConfig(AppConfig):
                         "traefik.http.routers.token-post.rule=Method('POST') && PathPrefix('/api/token') && !PathPrefix('/api/token/refresh')",
                         "traefik.http.services.token-service.loadbalancer.server.port=8000"
                     ]
+
                     register_django(
                         service_id=f"{service_id_prefix}token-1",
                         service_name="token-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=token_tags
                     )
@@ -63,7 +69,7 @@ class UtilsConfig(AppConfig):
                         service_name="token-refresh-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=refresh_tags
                     )
@@ -82,7 +88,7 @@ class UtilsConfig(AppConfig):
                         service_name="products-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=products_tags
                     )
@@ -101,7 +107,7 @@ class UtilsConfig(AppConfig):
                         service_name="orders-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=orders_tags
                     )
@@ -119,7 +125,7 @@ class UtilsConfig(AppConfig):
                         service_name="payments-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=payments_tags
                     )
@@ -138,7 +144,7 @@ class UtilsConfig(AppConfig):
                         service_name="reviews-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=reviews_tags
                     )
@@ -155,7 +161,7 @@ class UtilsConfig(AppConfig):
                         service_name="invoices-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=invoices_tags
                     )
@@ -172,7 +178,7 @@ class UtilsConfig(AppConfig):
                         service_name="notifications-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=notifications_tags
                     )
@@ -194,7 +200,7 @@ class UtilsConfig(AppConfig):
                         service_name="shop-service",
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=shop_tags
                     )
@@ -210,7 +216,7 @@ class UtilsConfig(AppConfig):
                         service_name=SERVICE_NAME,
                         address=DJANGO_HOST,
                         port=DJANGO_PORT,
-                        health_path="/health/",
+                        health_path=HEALTH_PATH,
                         interval="10s",
                         tags=fallback_tags
                     )

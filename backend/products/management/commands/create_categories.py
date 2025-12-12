@@ -50,9 +50,10 @@ class Command(BaseCommand):
             "Fournitures Bureau",
         ]
         
+
         created_count = 0
         for name in categories:
-            category, created = Category.objects.get_or_create(name=name)
+            _, created = Category.objects.get_or_create(name=name)
             if created:
                 created_count += 1
                 self.stdout.write(f'  ✓ {name}')

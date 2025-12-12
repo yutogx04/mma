@@ -192,7 +192,8 @@ def vendor_register_view(request):
                 role='vendor'
             )
             
-            shop = Shop.objects.create(
+
+            Shop.objects.create(
                 user=user,
                 name=shop_name,
                 description=shop_description

@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q, Count
 from django.views.decorators.http import require_http_methods
 
+
 from .models import Product, Category
 from .forms import ProductForm
 from users.decorators import vendor_required
@@ -16,6 +17,9 @@ from users.permissions import can_edit_product, can_delete_product, can_create_p
 from shop.models import Shop
 from orders.models import Order, OrderItem
 from .serializers import ProductSerializer, CategorySerializer
+
+# Constants
+PERMISSION_DENIED = "Permission denied"
 
 
 @require_http_methods(["GET"])
@@ -39,10 +43,11 @@ def product_list(request):
     })
 
 @require_http_methods(["GET", "POST"])
+
 @login_required
 def create_product_view(request):
     if not (request.user.role == 'vendor' or request.user.role == 'admin'):
-        return HttpResponseForbidden("Permission denied")
+        return HttpResponseForbidden(PERMISSION_DENIED)
     
     categories = Category.objects.all()
     
@@ -72,13 +77,14 @@ def create_product_view(request):
         'categories': categories
     })
 
+
 @require_http_methods(["GET", "POST"])
 @login_required
 def update_product_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
     if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
-        return HttpResponseForbidden("Permission denied")
+        return HttpResponseForbidden(PERMISSION_DENIED)
     
     categories = Category.objects.all()
     
@@ -97,13 +103,14 @@ def update_product_view(request, product_id):
         'categories': categories 
     })
 
+
 @require_http_methods(["GET", "POST", "DELETE"])
 @login_required
 def delete_product_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
     if not (request.user.role == 'admin' or (request.user.role == 'vendor' and product.shop.user == request.user)):
-        return HttpResponseForbidden("Permission denied")
+        return HttpResponseForbidden(PERMISSION_DENIED)
     
     if request.method in ['POST', 'DELETE']:
         if product.orderitem_set.exists():
@@ -187,11 +194,12 @@ def add_to_cart_view(request):
     
     product = get_object_or_404(Product, id=product_id)
     
+
     if quantity > product.stock_quantity:
         messages.error(request, f"Stock insuffisant. Quantité disponible: {product.stock_quantity}")
         return redirect('product_detail', product_id=product_id)
     
-    cart, created = Order.objects.get_or_create(
+    cart, _ = Order.objects.get_or_create(
         user=request.user,
         status='cart',
         defaults={'total_amount': 0}

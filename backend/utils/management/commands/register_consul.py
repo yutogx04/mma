@@ -1,6 +1,10 @@
+
 from django.core.management.base import BaseCommand
 from config import DJANGO_HOST, DJANGO_PORT, SERVICE_NAME
 from utils.consul import register_django
+
+# Constants
+HEALTH_PATH = "/health/"
 
 
 class Command(BaseCommand):
@@ -31,7 +35,7 @@ class Command(BaseCommand):
                 service_name="users-service",
                 address=DJANGO_HOST,
                 port=DJANGO_PORT,
-                health_path="/health/",
+                health_path=HEALTH_PATH,
                 interval="10s",
                 tags=users_tags
             )
@@ -47,7 +51,7 @@ class Command(BaseCommand):
                 service_name="token-service",
                 address=DJANGO_HOST,
                 port=DJANGO_PORT,
-                health_path="/health/",
+                health_path=HEALTH_PATH,
                 interval="10s",
                 tags=token_tags
             )
@@ -62,7 +66,7 @@ class Command(BaseCommand):
                 service_name="token-refresh-service",
                 address=DJANGO_HOST,
                 port=DJANGO_PORT,
-                health_path="/health/",
+                health_path=HEALTH_PATH,
                 interval="10s",
                 tags=refresh_tags
             )
@@ -85,7 +89,7 @@ class Command(BaseCommand):
                 service_name="products-service",
                 address=DJANGO_HOST,
                 port=DJANGO_PORT,
-                health_path="/health/",
+                health_path=HEALTH_PATH,
                 interval="10s",
                 tags=products_tags
             )
