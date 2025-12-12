@@ -7,7 +7,9 @@ class UtilsConfig(AppConfig):
     
     def ready(self):
         import os
-        if os.environ.get('RUN_MAIN') == 'true':
+        # Only auto-register if explicitly enabled (for Docker deployment)
+        # For local development, use JSON files in consul/services/ instead
+        if os.environ.get('RUN_MAIN') == 'true' and os.environ.get('AUTO_REGISTER_CONSUL') == 'true':
             try:
                 from config import DJANGO_HOST, DJANGO_PORT, SERVICE_NAME
                 from .consul import register_django

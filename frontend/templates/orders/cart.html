@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Mon Panier - E-Commerce{% endblock %}
 
@@ -22,8 +22,7 @@
 
                         <div style="flex: 1;">
                             <h3 style="margin-bottom: 0.25rem;">{{ item.product.name }}</h3>
-                            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.5rem;">Reference: #{{
-                                item.product.id }} | Vendeur: {{ item.product.shop.name }}</p>
+                            <p class="text-muted" style="font-size: 0.875rem; margin-bottom: 0.5rem;">Reference: #{{ item.product.id }} | Vendeur: {{ item.product.shop.name }}</p>
                             <div class="text-success" style="font-size: 1.25rem; font-weight: bold;">${{ item.price }}
                             </div>
                         </div>
@@ -36,13 +35,11 @@
                                 <input type="hidden" name="item_id" value="{{ item.id }}">
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'-1' }}"
                                     class="btn btn-secondary btn-sm">-</button>
-                                <span class="badge badge-secondary" style="min-width: 40px; padding: 0.5rem;">{{
-                                    item.quantity }}</span>
+                                <span class="badge badge-secondary" style="min-width: 40px; padding: 0.5rem;">{{ item.quantity }}</span>
                                 <button type="submit" name="quantity" value="{{ item.quantity|add:'1' }}"
                                     class="btn btn-secondary btn-sm">+</button>
                             </form>
-                            <div style="margin-top: 0.5rem; font-weight: bold;">${% widthratio item.quantity 1
-                                item.price %}</div>
+                            <div style="margin-top: 0.5rem; font-weight: bold;">${% widthratio item.quantity 1 item.price %}</div>
                         </div>
 
                         <form method="post" data-confirm="Retirer cet article du panier?">
@@ -77,8 +74,7 @@
 
                 <div class="flex justify-between mb-3">
                     <span style="font-size: 1.25rem; font-weight: 700;">Total:</span>
-                    <span class="text-success" style="font-size: 1.5rem; font-weight: 700;">${{ cart.total_amount
-                        }}</span>
+                    <span class="text-success" style="font-size: 1.5rem; font-weight: 700;">${{ cart.total_amount }}</span>
                 </div>
 
                 <form method="post">

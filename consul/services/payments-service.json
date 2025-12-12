@@ -5,8 +5,11 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.payments-get.entrypoints=web",
             "traefik.http.routers.payments-get.rule=Method('GET') && (PathPrefix('/api/payments') || PathPrefix('/api/payment-methods'))",
+            "traefik.http.routers.payments-post.entrypoints=web",
             "traefik.http.routers.payments-post.rule=Method('POST') && (PathPrefix('/api/payments') || PathPrefix('/api/payment-methods'))",
+            "traefik.http.routers.payments-delete.entrypoints=web",
             "traefik.http.routers.payments-delete.rule=Method('DELETE') && PathPrefix('/api/payment-methods')",
             "traefik.http.services.payments-service.loadbalancer.server.port=8000"
         ],

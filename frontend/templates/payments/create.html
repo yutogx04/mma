@@ -7,8 +7,7 @@
     <div class="breadcrumb" style="margin-bottom: 2rem;">
         <a href="{% url 'order_list' %}" style="color: #007bff; text-decoration: none;">Mes Commandes</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
-        <a href="{% url 'order_detail' order.id %}" style="color: #007bff; text-decoration: none;">Commande #{{ order.id
-            }}</a>
+        <a href="{% url 'order_detail' order.id %}" style="color: #007bff; text-decoration: none;">Commande #{{ order.id }}</a>
         <span style="margin: 0 0.5rem; color: #666;">/</span>
         <span style="color: #333;">Paiement</span>
     </div>
@@ -65,8 +64,7 @@
 
                 <div style="display: flex; justify-content: space-between;">
                     <span style="font-size: 1.2rem; font-weight: bold;">Total:</span>
-                    <span class="text-success" style="font-size: 1.5rem; font-weight: bold;">${{ order.total_amount
-                        }}</span>
+                    <span class="text-success" style="font-size: 1.5rem; font-weight: bold;">${{ order.total_amount }}</span>
                 </div>
             </div>
         </div>

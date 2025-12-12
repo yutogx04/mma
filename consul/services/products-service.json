@@ -5,9 +5,13 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.products-get.entrypoints=web",
             "traefik.http.routers.products-get.rule=Method('GET') && (PathPrefix('/api/products') || PathPrefix('/api/categories'))",
+            "traefik.http.routers.products-post.entrypoints=web",
             "traefik.http.routers.products-post.rule=Method('POST') && (PathPrefix('/api/products') || PathPrefix('/api/categories'))",
+            "traefik.http.routers.products-put.entrypoints=web",
             "traefik.http.routers.products-put.rule=Method('PUT') && PathPrefix('/api/products')",
+            "traefik.http.routers.products-delete.entrypoints=web",
             "traefik.http.routers.products-delete.rule=Method('DELETE') && PathPrefix('/api/products')",
             "traefik.http.services.products-service.loadbalancer.server.port=8000"
         ],

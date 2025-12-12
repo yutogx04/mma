@@ -2,26 +2,6 @@ import requests
 from config import CONSUL_HOST, CONSUL_PORT, DJANGO_HOST, DJANGO_PORT, get_health_check_url
 
 
-def register_service():
-    service_data = {
-        "ID": "django-service-1",
-        "Name": "django-service",
-        "Address": DJANGO_HOST,
-        "Port": DJANGO_PORT,
-        "Check": {
-            "HTTP": get_health_check_url(),
-            "Interval": "10s"
-        }
-    }
-    try:
-        requests.put(
-            f"http://{CONSUL_HOST}:{CONSUL_PORT}/v1/agent/service/register",
-            json=service_data
-        )
-        print(f"[Consul] Service enregistré: django-service ({DJANGO_HOST}:{DJANGO_PORT})")
-    except Exception as e:
-        print(f"[Consul] Erreur d'enregistrement: {e}")
-
 
 def register_django(
     service_id: str,

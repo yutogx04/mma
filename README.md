@@ -151,45 +151,52 @@ docker-compose ps
 python manage.py createsuperuser
 ```
 
-# Distributed Application Deployment Guide (5 Machines)
+# Docker Distributed Deployment Guide (5 Machines)
 
-This guide details how to deploy the application across 5 separate
-machines.
+> **Deploy the application across 5 separate machines using Docker**
 
-##  IMPORTANT
+---
 
-**Prerequisite:** You must have a shared **MySQL Database accessible to
-all machines**.\
-This guide assumes you will configure the database connection details in
-the `.env` file on each machine.
+## Architecture
 
-------------------------------------------------------------------------
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Client    │────▶│  Machine 1  │────▶│  Machine 2  │
+│  (Browser)  │     │  (Traefik)  │     │  (Consul)   │
+└─────────────┘     │  :80        │     │  :8500      │
+                    └─────────────┘     └─────────────┘
+                           │                   │
+          ┌────────────────┼───────────────────┤
+          ▼                ▼                   ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Machine 3  │     │  Machine 4  │     │  Machine 5  │
+│  (RabbitMQ) │     │ (Auth+MySQL)│     │ (Services)  │
+│  :5672      │     │  :8000,:3306│     │ :8000-8006  │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
 
-##  Network Setup
+| Machine | Role | IP |
+|---------|------|-----|
+| 1 | Traefik (Gateway) | 192.168.1.10 |
+| 2 | Consul (Registry) | 192.168.1.11 |
+| 3 | RabbitMQ + Workers | 192.168.1.12 |
+| 4 | Auth + MySQL | 192.168.1.13 |
+| 5 | App Services | 192.168.1.14 |
 
-Assign static IP addresses to your 5 machines to ensure they can find
-each other:
+---
 
-  Machine     Role                   IP
-  ----------- ---------------------- ----------------
-  Machine 1   Traefik / Gateway      `192.168.1.10`
-  Machine 2   Consul / Registry      `192.168.1.11`
-  Machine 3   Messaging / RabbitMQ   `192.168.1.12`
-  Machine 4   Auth / Core / DB       `192.168.1.13`
-  Machine 5   App / Services         `192.168.1.14`
+## Prerequisites
 
-(Adjust these IPs to match your actual network.)
+1. **Docker & Docker Compose** on all machines
+2. **Shared MySQL Database** accessible from all machines
+3. **Clone the repo** on Machines 3, 4, 5 (for building the image)
 
-------------------------------------------------------------------------
+---
 
-##  Machine 1: The Gateway (Traefik)
+## Machine 1: Traefik
 
-**Role:** Accepts all incoming traffic and routes it to the correct
-service.
-
-Create a folder `deployment` and inside it create `docker-compose.yml`:
-
-``` yaml
+Create `docker-compose.yml`:
+```yaml
 version: '3.8'
 services:
   traefik:
@@ -202,169 +209,482 @@ services:
       - "--api.insecure=true"
       - "--providers.consulcatalog=true"
       - "--providers.consulcatalog.endpoint.address=192.168.1.11:8500"
+      - "--providers.consulcatalog.exposedByDefault=false"
+      - "--providers.consulcatalog.prefix=traefik"
       - "--entrypoints.web.address=:80"
 ```
 
-Run:
-
-``` bash
+```bash
 docker-compose up -d
 ```
 
-------------------------------------------------------------------------
+---
 
-##  Machine 2: The Registry (Consul)
-
-**Role:** Tracks where every service is running.
+## Machine 2: Consul
 
 Create `docker-compose.yml`:
-
-``` yaml
+```yaml
 version: '3.8'
 services:
   consul:
     image: consul:1.15
     ports:
       - "8500:8500"
-    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.11
 ```
 
-Run:
-
-``` bash
+```bash
 docker-compose up -d
 ```
 
-------------------------------------------------------------------------
+---
 
-##  Machine 3: Messaging (RabbitMQ + Workers)
-
-**Role:** Background tasks, payments, notifications.
+## Machine 3: RabbitMQ + Workers
 
 Create `.env`:
-
-    RABBITMQ_HOST=192.168.1.12
-    CONSUL_HOST=192.168.1.11
-    DJANGO_HOST=192.168.1.12
-    DATABASE_URL=mysql://user:pass@192.168.1.13:3306/db_name
+```
+RABBITMQ_HOST=192.168.1.12
+CONSUL_HOST=192.168.1.11
+AUTO_REGISTER_CONSUL=true
+```
 
 Create `docker-compose.yml`:
-
-``` yaml
+```yaml
 version: '3.8'
 services:
   rabbitmq:
     image: rabbitmq:3-management
-    ports: ["5672:5672", "15672:15672"]
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
   payment-worker:
-    image: mma-backend:latest
+    build: ./backend
     command: python manage.py start_consumer
     env_file: .env
-    depends_on: [rabbitmq]
+    depends_on:
+      - rabbitmq
 
   notification-worker:
-    image: mma-backend:latest
+    build: ./backend
     command: python manage.py start_notification_consumer
     env_file: .env
-    depends_on: [rabbitmq]
+    depends_on:
+      - rabbitmq
 ```
 
-Run:
-
-``` bash
+```bash
 docker-compose up -d
 ```
 
-------------------------------------------------------------------------
+---
 
-##  Machine 4: Core (Auth & Database)
+## Machine 4: Auth + MySQL
 
-**Role:** Hosts Database + Users/Token services.
-
-Install **MySQL** here and enable remote access.
+Install MySQL and create database:
+```sql
+CREATE DATABASE mma_db;
+CREATE USER 'mma_admin'@'%' IDENTIFIED BY 'password';
+GRANT ALL ON mma_db.* TO 'mma_admin'@'%';
+FLUSH PRIVILEGES;
+```
 
 Create `.env`:
-
-    RABBITMQ_HOST=192.168.1.12
-    CONSUL_HOST=192.168.1.11
-    DJANGO_HOST=192.168.1.13
-    DATABASE_URL=mysql://user:pass@127.0.0.1:3306/db_name
-    SERVICE_NAME=users-service
+```
+RABBITMQ_HOST=192.168.1.12
+CONSUL_HOST=192.168.1.11
+DJANGO_HOST=192.168.1.13
+AUTO_REGISTER_CONSUL=true
+SERVICE_NAME=users-service
+```
 
 Create `docker-compose.yml`:
-
-``` yaml
+```yaml
 version: '3.8'
 services:
   users-service:
-    image: mma-backend:latest
-    ports: ["8000:8000"]
+    build: ./backend
+    ports:
+      - "8000:8000"
     env_file: .env
     environment:
       - SERVICE_NAME=users-service
-
-  token-service:
-    image: mma-backend:latest
-    ports: ["8001:8000"]
-    env_file: .env
-    environment:
-      - SERVICE_NAME=token-service
+      - AUTO_REGISTER_CONSUL=true
 ```
 
-Run:
+> **Note**: This automatically registers `token-service` and `token-refresh-service` too!
 
-``` bash
+```bash
 docker-compose up -d
 ```
 
-------------------------------------------------------------------------
+---
 
-##  Machine 5: Marketplace (All App Services)
-
-**Role:** Products, Orders, Shop, etc.
+## Machine 5: App Services
 
 Create `.env`:
-
-    RABBITMQ_HOST=192.168.1.12
-    CONSUL_HOST=192.168.1.11
-    DJANGO_HOST=192.168.1.14
-    DATABASE_URL=mysql://user:pass@192.168.1.13:3306/db_name
+```
+RABBITMQ_HOST=192.168.1.12
+CONSUL_HOST=192.168.1.11
+DJANGO_HOST=192.168.1.14
+AUTO_REGISTER_CONSUL=true
+```
 
 Create `docker-compose.yml`:
-
-``` yaml
+```yaml
 version: '3.8'
 services:
-  products:
-    image: mma-backend:latest
-    ports: ["8000:8000"]
+  products-service:
+    build: ./backend
+    ports:
+      - "8000:8000"
     env_file: .env
     environment:
       - SERVICE_NAME=products-service
+      - AUTO_REGISTER_CONSUL=true
 
-  orders:
-    image: mma-backend:latest
-    ports: ["8001:8000"]
+  orders-service:
+    build: ./backend
+    ports:
+      - "8001:8000"
     env_file: .env
     environment:
-       - SERVICE_NAME=orders-service
+      - SERVICE_NAME=orders-service
+      - AUTO_REGISTER_CONSUL=true
 
-  # Add other services (shop, reviews, invoices...)
-  # Use ports 8002, 8003, 8004...
+  payments-service:
+    build: ./backend
+    ports:
+      - "8002:8000"
+    env_file: .env
+    environment:
+      - SERVICE_NAME=payments-service
+      - AUTO_REGISTER_CONSUL=true
+
+  reviews-service:
+    build: ./backend
+    ports:
+      - "8003:8000"
+    env_file: .env
+    environment:
+      - SERVICE_NAME=reviews-service
+      - AUTO_REGISTER_CONSUL=true
+
+  invoices-service:
+    build: ./backend
+    ports:
+      - "8004:8000"
+    env_file: .env
+    environment:
+      - SERVICE_NAME=invoices-service
+      - AUTO_REGISTER_CONSUL=true
+
+  notifications-service:
+    build: ./backend
+    ports:
+      - "8005:8000"
+    env_file: .env
+    environment:
+      - SERVICE_NAME=notifications-service
+      - AUTO_REGISTER_CONSUL=true
+
+  shop-service:
+    build: ./backend
+    ports:
+      - "8006:8000"
+    env_file: .env
+    environment:
+      - SERVICE_NAME=shop-service
+      - AUTO_REGISTER_CONSUL=true
 ```
 
-Run:
-
-``` bash
+```bash
 docker-compose up -d
 ```
 
-------------------------------------------------------------------------
+---
 
-## 💡 TIP
+## Verification
 
-Since all Machine 5 services share the same IP, always map **unique
-ports**\
-(8000, 8001, 8002...) and the existing `utils/apps.py` will correctly
-register them in Consul.
+1. **Consul UI**: http://192.168.1.11:8500
+   - Should show 10 healthy services
+
+2. **Traefik Dashboard**: http://192.168.1.10:8080
+   - Should show all routers
+
+3. **Application**: http://192.168.1.10
+   - Access via Traefik gateway
+
+4. **RabbitMQ**: http://192.168.1.12:15672
+   - Login: guest/guest
+
+---
+
+## Summary
+
+| Machine | Containers |
+|---------|-----------|
+| 1 | traefik |
+| 2 | consul |
+| 3 | rabbitmq, payment-worker, notification-worker |
+| 4 | users-service |
+| 5 | products, orders, payments, reviews, invoices, notifications, shop |
+| **Total** | **13 containers** |
+
+# No Docker Deployment Guide 
+
+> **For running services across 5 machines without Docker**
+
+---
+
+## Architecture Overview
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Phone     │────▶│  Machine 1  │────▶│  Machine 2  │
+│  (Client)   │     │  (Traefik)  │     │  (Consul)   │
+└─────────────┘     │  :80        │     │  :8500      │
+                    └─────────────┘     └─────────────┘
+                           │                   │
+          ┌────────────────┼───────────────────┤
+          ▼                ▼                   ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Machine 3  │     │  Machine 4  │     │  Machine 5  │
+│  (RabbitMQ) │     │ (Auth+MySQL)│     │ (Services)  │
+│  :5672      │     │  :8000,:3306│     │ :8000-8006  │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+| Machine | Role | IP (Example) |
+|---------|------|--------------|
+| 1 | Traefik (Reverse Proxy) | 192.168.1.10 |
+| 2 | Consul (Service Registry) | 192.168.1.11 |
+| 3 | RabbitMQ + Workers | 192.168.1.12 |
+| 4 | Auth + MySQL Database | 192.168.1.13 |
+| 5 | Application Services | 192.168.1.14 |
+
+---
+
+## Prerequisites
+
+### On ALL Machines
+```bash
+# Python 3.10+
+pip install -r backend/requirements.txt
+
+# Clone repository
+git clone <your-repo-url>
+cd mma/backend
+```
+
+### Firewall Ports (Open These)
+| Machine | Ports |
+|---------|-------|
+| 1 | 80, 8080 |
+| 2 | 8500 |
+| 3 | 5672, 15672 |
+| 4 | 8000, 3306 |
+| 5 | 8000-8006 |
+
+### Django Settings
+Add to `backend/backend/settings.py`:
+```python
+ALLOWED_HOSTS = ['*']  # Or list all machine IPs
+```
+
+---
+
+## Machine 1: Traefik
+
+### Download
+[Traefik Releases](https://github.com/traefik/traefik/releases)
+
+### Config (`traefik.yml`)
+```yaml
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  consulCatalog:
+    endpoint:
+      address: "192.168.1.11:8500"
+    exposedByDefault: false
+    prefix: traefik
+
+log:
+  level: INFO
+```
+
+### Run
+```bash
+.\traefik.exe --configfile=traefik.yml
+```
+
+---
+
+## Machine 2: Consul
+
+### Download
+[HashiCorp Consul](https://developer.hashicorp.com/consul/downloads)
+
+### Run
+```bash
+.\consul.exe agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=192.168.1.11 -data-dir=./data
+```
+
+---
+
+## Machine 3: RabbitMQ + Workers
+
+### Install RabbitMQ
+[RabbitMQ Downloads](https://www.rabbitmq.com/download.html) - Start as service
+
+### Terminal 1: Payment Worker
+```powershell
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:CONSUL_HOST="192.168.1.11"
+python manage.py start_consumer
+```
+
+### Terminal 2: Notification Worker
+```powershell
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:CONSUL_HOST="192.168.1.11"
+python manage.py start_notification_consumer
+```
+
+---
+
+## Machine 4: Auth + MySQL
+
+### MySQL Setup
+1. Install MySQL Server
+2. Create database
+3. Note: `mysql://user:pass@192.168.1.13:3306/dbname`
+
+### Terminal 1: Users Service
+```powershell
+$env:SERVICE_NAME="users-service"
+$env:DJANGO_HOST="192.168.1.13"
+$env:DJANGO_PORT="8000"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8000
+```
+
+> **Note**: This also registers `token-service` and `token-refresh-service` automatically!
+
+---
+
+## Machine 5: Application Services
+
+### Terminal 1: Products
+```powershell
+$env:SERVICE_NAME="products-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8000"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8000
+```
+
+### Terminal 2: Orders
+```powershell
+$env:SERVICE_NAME="orders-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8001"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8001
+```
+
+### Terminal 3: Payments
+```powershell
+$env:SERVICE_NAME="payments-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8002"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8002
+```
+
+### Terminal 4: Reviews
+```powershell
+$env:SERVICE_NAME="reviews-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8003"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8003
+```
+
+### Terminal 5: Invoices
+```powershell
+$env:SERVICE_NAME="invoices-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8004"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8004
+```
+
+### Terminal 6: Notifications
+```powershell
+$env:SERVICE_NAME="notifications-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8005"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8005
+```
+
+### Terminal 7: Shop 
+```powershell
+$env:SERVICE_NAME="shop-service"
+$env:DJANGO_HOST="192.168.1.14"
+$env:DJANGO_PORT="8006"
+$env:CONSUL_HOST="192.168.1.11"
+$env:RABBITMQ_HOST="192.168.1.12"
+$env:AUTO_REGISTER_CONSUL="true"
+python manage.py runserver 0.0.0.0:8006
+```
+
+---
+
+## Verification
+
+### 1. Check Consul UI
+- URL: `http://192.168.1.11:8500`
+- Should show 10 healthy services (green)
+
+### 2. Check Traefik Dashboard
+- URL: `http://192.168.1.10:8080`
+- Should show all routers
+
+### 3. Access App from Phone
+- Connect phone to same WiFi network
+- Open browser: `http://192.168.1.10`
+
+---
+
+## Quick Reference
+
+| Total Terminals | 13 |
+|-----------------|-----|
+| Machine 1 | 1 |
+| Machine 2 | 1 |
+| Machine 3 | 3 (RabbitMQ daemon + 2 workers) |
+| Machine 4 | 1 |
+| Machine 5 | 7 |

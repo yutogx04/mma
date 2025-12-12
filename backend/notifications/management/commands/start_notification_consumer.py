@@ -45,19 +45,19 @@ class Command(BaseCommand):
                                 notification_type='payment'
                             )
                             
-                            print(f"[Notification Consumer] ✅ Notification saved for Order #{order_id} (User: {user.username})")
+                            print(f"[Notification Consumer]  Notification saved for Order #{order_id} (User: {user.username})")
                             ch.basic_ack(delivery_tag=method.delivery_tag)
                             
                         except Order.DoesNotExist:
-                            print(f"[Notification Consumer] ❌ Order #{order_id} not found!")
+                            print(f"[Notification Consumer]  Order #{order_id} not found!")
                             ch.basic_ack(delivery_tag=method.delivery_tag)
                             
                     except json.JSONDecodeError as e:
-                        print(f"[Notification Consumer] ❌ Invalid JSON: {e}")
+                        print(f"[Notification Consumer]  Invalid JSON: {e}")
                         ch.basic_ack(delivery_tag=method.delivery_tag)
                         
                     except Exception as e:
-                        print(f"[Notification Consumer] ❌ Error processing notification: {e}")
+                        print(f"[Notification Consumer]  Error processing notification: {e}")
                         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
                 
                 channel.basic_consume(
@@ -69,12 +69,12 @@ class Command(BaseCommand):
                 channel.start_consuming()
                 
             except pika.exceptions.AMQPConnectionError as e:
-                print(f"[Notification Consumer] ❌ Connection failed: {e}")
+                print(f"[Notification Consumer]  Connection failed: {e}")
                 if attempt < max_retries - 1:
                     print(f"[Notification Consumer] Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                 else:
-                    print(f"[Notification Consumer] ❌ Max retries reached. Exiting.")
+                    print(f"[Notification Consumer]  Max retries reached. Exiting.")
                     raise
                     
             except KeyboardInterrupt:
@@ -82,7 +82,7 @@ class Command(BaseCommand):
                 break
                 
             except Exception as e:
-                print(f"[Notification Consumer] ❌ Unexpected error: {e}")
+                print(f"[Notification Consumer]  Unexpected error: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:

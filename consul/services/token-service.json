@@ -5,6 +5,7 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.token-post.entrypoints=web",
             "traefik.http.routers.token-post.rule=Method('POST') && PathPrefix('/api/token') && !PathPrefix('/api/token/refresh')",
             "traefik.http.services.token-service.loadbalancer.server.port=8000"
         ],

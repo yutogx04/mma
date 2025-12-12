@@ -5,7 +5,9 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.invoices-get.entrypoints=web",
             "traefik.http.routers.invoices-get.rule=Method('GET') && PathPrefix('/api/invoices')",
+            "traefik.http.routers.invoices-post.entrypoints=web",
             "traefik.http.routers.invoices-post.rule=Method('POST') && PathPrefix('/api/invoices')",
             "traefik.http.services.invoices-service.loadbalancer.server.port=8000"
         ],

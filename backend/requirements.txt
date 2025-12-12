@@ -7,5 +7,3 @@ python-dotenv
 requests
 pika
 python-consul
-mysqlclient
-psycopg2-binary

@@ -52,6 +52,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=users-service
       - SERVICE_NAME=users-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -73,6 +74,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=products-service
       - SERVICE_NAME=products-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -94,6 +96,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=orders-service
       - SERVICE_NAME=orders-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -115,6 +118,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=payments-service
       - SERVICE_NAME=payments-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -136,6 +140,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=reviews-service
       - SERVICE_NAME=reviews-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -157,6 +162,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=invoices-service
       - SERVICE_NAME=invoices-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -178,6 +184,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=shop-service
       - SERVICE_NAME=shop-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul
@@ -199,6 +206,7 @@ services:
       - CONSUL_HOST=consul
       - DJANGO_HOST=notifications-service
       - SERVICE_NAME=notifications-service
+      - AUTO_REGISTER_CONSUL=true
     depends_on:
       - rabbitmq
       - consul

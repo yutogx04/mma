@@ -5,9 +5,13 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.reviews-get.entrypoints=web",
             "traefik.http.routers.reviews-get.rule=Method('GET') && PathPrefix('/api/reviews')",
+            "traefik.http.routers.reviews-post.entrypoints=web",
             "traefik.http.routers.reviews-post.rule=Method('POST') && PathPrefix('/api/reviews')",
+            "traefik.http.routers.reviews-put.entrypoints=web",
             "traefik.http.routers.reviews-put.rule=Method('PUT') && PathPrefix('/api/reviews')",
+            "traefik.http.routers.reviews-delete.entrypoints=web",
             "traefik.http.routers.reviews-delete.rule=Method('DELETE') && PathPrefix('/api/reviews')",
             "traefik.http.services.reviews-service.loadbalancer.server.port=8000"
         ],

@@ -5,11 +5,17 @@
         "port": 8000,
         "tags": [
             "traefik.enable=true",
+            "traefik.http.routers.shop-api.entrypoints=web",
             "traefik.http.routers.shop-api.rule=PathPrefix('/api/shops')",
+            "traefik.http.routers.shop-admin.entrypoints=web",
             "traefik.http.routers.shop-admin.rule=PathPrefix('/admin')",
+            "traefik.http.routers.shop-static.entrypoints=web",
             "traefik.http.routers.shop-static.rule=PathPrefix('/static')",
+            "traefik.http.routers.shop-media.entrypoints=web",
             "traefik.http.routers.shop-media.rule=PathPrefix('/media')",
+            "traefik.http.routers.shop-dashboard.entrypoints=web",
             "traefik.http.routers.shop-dashboard.rule=PathPrefix('/dashboard')",
+            "traefik.http.routers.shop-root.entrypoints=web",
             "traefik.http.routers.shop-root.rule=PathPrefix('/')",
             "traefik.http.routers.shop-root.priority=1",
             "traefik.http.services.shop-service.loadbalancer.server.port=8000"

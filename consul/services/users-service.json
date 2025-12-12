@@ -1,21 +1,27 @@
 {
-  "service": {
-    "name": "users-service",
-    "address": "127.0.0.1",
-    "port": 8000,
-    "tags": [
-      "traefik.enable=true",
-      "traefik.http.routers.users-get.rule=Method('GET') && PathPrefix('/api/users')",
-      "traefik.http.routers.users-post.rule=Method('POST') && PathPrefix('/api/users')",
-      "traefik.http.routers.users-put.rule=Method('PUT') && PathPrefix('/api/users')",
-      "traefik.http.routers.users-delete.rule=Method('DELETE') && PathPrefix('/api/users')",
-      "traefik.http.routers.auth-get.rule=Method('GET') && PathPrefix('/api/auth')",
-      "traefik.http.routers.auth-post.rule=Method('POST') && PathPrefix('/api/auth')",
-      "traefik.http.services.users-service.loadbalancer.server.port=8000"
-    ],
-    "check": {
-      "http": "http://127.0.0.1:8000/health/",
-      "interval": "10s"
+    "service": {
+        "name": "users-service",
+        "address": "127.0.0.1",
+        "port": 8000,
+        "tags": [
+            "traefik.enable=true",
+            "traefik.http.routers.users-get.entrypoints=web",
+            "traefik.http.routers.users-get.rule=Method('GET') && PathPrefix('/api/users')",
+            "traefik.http.routers.users-post.entrypoints=web",
+            "traefik.http.routers.users-post.rule=Method('POST') && PathPrefix('/api/users')",
+            "traefik.http.routers.users-put.entrypoints=web",
+            "traefik.http.routers.users-put.rule=Method('PUT') && PathPrefix('/api/users')",
+            "traefik.http.routers.users-delete.entrypoints=web",
+            "traefik.http.routers.users-delete.rule=Method('DELETE') && PathPrefix('/api/users')",
+            "traefik.http.routers.auth-get.entrypoints=web",
+            "traefik.http.routers.auth-get.rule=Method('GET') && PathPrefix('/api/auth')",
+            "traefik.http.routers.auth-post.entrypoints=web",
+            "traefik.http.routers.auth-post.rule=Method('POST') && PathPrefix('/api/auth')",
+            "traefik.http.services.users-service.loadbalancer.server.port=8000"
+        ],
+        "check": {
+            "http": "http://127.0.0.1:8000/health/",
+            "interval": "10s"
+        }
     }
-  }
 }
