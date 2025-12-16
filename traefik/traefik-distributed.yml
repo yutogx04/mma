@@ -1,0 +1,26 @@
+# Traefik Configuration for Distributed Deployment
+# Use this on Machine 2 (or wherever Traefik runs)
+
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+
+providers:
+  consulCatalog:
+    endpoint:
+      # Consul Server (Leader) IP
+      address: "10.237.235.168:8500"
+    exposedByDefault: false
+    prefix: traefik
+
+log:
+  level: INFO
+
+accessLog:
+  # Windows: use relative path
+  # Linux: use /var/log/traefik/access.log
+  filepath: "./access.log"

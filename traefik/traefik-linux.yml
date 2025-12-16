@@ -1,0 +1,41 @@
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      storage: /etc/traefik/acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  docker:
+    exposedByDefault: false
+  file:
+    filename: ./dynamic.yml
+    watch: true
+  consulCatalog:
+    endpoint:
+      # Linux (Split Setup): Must use the actual IP of the Consul machine
+      # Replace 192.168.1.11 with the actual IP if different
+      address: "192.168.1.11:8500"
+    exposedByDefault: false
+    prefix: traefik
+
+
+log:
+  level: INFO
+
+accessLog:
+  filepath: /var/log/traefik/access.log

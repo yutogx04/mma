@@ -1,0 +1,44 @@
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      # Windows: Use local relative path or absolute path like c:/traefik/acme.json
+      storage: ./acme.json
+      httpChallenge:
+        entryPoint: web
+
+providers:
+  # Docker provider optional on Windows bare-metal, but keeping it doesn't hurt if docker is running
+  docker:
+    exposedByDefault: false
+  file:
+    # Windows: Use local relative path
+    filename: ./dynamic.yml
+    watch: true
+  consulCatalog:
+    endpoint:
+      # Windows (Local Test): Use localhost
+      address: "127.0.0.1:8500"
+    exposedByDefault: false
+    prefix: traefik
+
+
+log:
+  level: INFO
+
+accessLog:
+  # Windows: Use local relative path
+  filepath: ./access.log
